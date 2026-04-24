@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeamento de Mesas em Eventos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="toolbar">
+        <button id="toggleDrawer">☰ Menu</button>
+        <button id="selectMode">Selecionar</button>
+        <button id="deleteMode">Excluir</button>
+        <button id="deleteAll">Excluir Tudo</button>
+        <span id="seatCounter">Assentos: 0</span>
+        <button id="fileMenuBtn">Arquivo</button>
+    </div>
+    <div class="drawer" id="drawer">
+        <h3>Adicionar Item</h3>
+        <button id="addSquare">Mesa Quadrada</button>
+        <button id="addRound">Mesa Redonda</button>
+        <button id="addSeat">Acento</button>
+        <button id="addRoundSeat">Acento Redondo</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div class="sidebar" id="sidebar">
+        <h2>Customizar item</h2>
+        <label for="name">Nome:</label>
+        <input type="text" id="name" placeholder="Nome do item">
+
+        <label for="fontSize">Tamanho da fonte:</label>
+        <input type="number" id="fontSize" min="10" max="100" value="24">
+
+        <label for="nameColor">Cor do texto:</label>
+        <input type="color" id="nameColor" value="#000000">
+
+        <label for="width">Largura:</label>
+        <input type="number" id="width" min="50" max="400" value="100">
+
+        <label for="height">Altura:</label>
+        <input type="number" id="height" min="50" max="400" value="100">
+
+        <label for="radius">Raio:</label>
+        <input type="number" id="radius" min="25" max="200" value="50">
+
+        <label for="angle">Ângulo de rotação:</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="range" id="angle" min="0" max="360" value="0" style="flex: 1;">
+            <input type="number" id="angleInput" min="0" max="360" value="0" style="width: 60px;">
+        </div>
+
+        <label for="color">Cor:</label>
+        <input type="color" id="color" value="#8B4513">
+
+        <label for="seatColor">Cor dos assentos:</label>
+        <input type="color" id="seatColor" value="#dddddd">
+
+        <label for="seats">Quantidade de assentos:</label>
+        <input type="number" id="seats" min="0" max="12" value="8">
+        <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 acentos caso esteja utilizando as mesas do local</div>
+
+        <label for="counterEnabled" class="checkbox-inline" id="counterEnabledLabel" style="display:none;">
+            <input type="checkbox" id="counterEnabled" checked>
+            <span>Contador de acentos</span>
+        </label>
+
+        <label for="cornerSeats" class="checkbox-inline">
+            <input type="checkbox" id="cornerSeats" checked>
+            <span>Acento nas pontas</span>
+        </label>
+
+        <button id="duplicate">Duplicar</button>
+        <button id="delete">Excluir</button>
+    </div>
+    <div class="file-menu-overlay" id="fileMenuOverlay">
+        <div class="file-menu">
+            <h3>Arquivo</h3>
+            <button id="saveJson">Salvar neste dispositivo</button>
+            <button id="loadJson">Carregar do dispositivo</button>
+            <button id="downloadPng">Baixar PNG</button>
+            <button id="closeFileMenu" class="secondary">Fechar</button>
+            <input type="file" id="fileInput" accept="application/json" style="display:none;">
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
