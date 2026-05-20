@@ -1,6 +1,25 @@
+import { auth, db } from './firebase.js';
+import { 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup
+} from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+import { 
+    doc, 
+    setDoc,
+    getDoc, 
+    collection, 
+    query, 
+    where, 
+    getDocs 
+} from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+
 class Table {
     constructor(type, x, y, width, height, radius, angle, color, name, seats, nameColor = '#000000', cornerSeats = true, seatColor = '#dddddd', counterEnabled = true, fontSize = 24) {
-        this.type = type; // 'square' or 'round' or 'seat'
+        this.type = type;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -206,6 +225,43 @@ const downloadPngBtn = document.getElementById('downloadPng');
 const closeFileMenuBtn = document.getElementById('closeFileMenu');
 const fileInput = document.getElementById('fileInput');
 const nameInput = document.getElementById('name');
+const zoomRange = document.getElementById('zoomRange');
+const zoomValue = document.getElementById('zoomValue');
+
+// Authentication elements
+const loginBtn = document.getElementById('loginBtn');
+const userDisplay = document.getElementById('userDisplay');
+const userName = document.getElementById('userName');
+const logoutBtn = document.getElementById('logoutBtn');
+const authModal = document.getElementById('authModal');
+const closeAuthModal = document.getElementById('closeAuthModal');
+const loginTab = document.getElementById('loginTab');
+const registerTab = document.getElementById('registerTab');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const loginSubmit = document.getElementById('loginSubmit');
+const registerSubmit = document.getElementById('registerSubmit');
+const googleLogin = document.getElementById('googleLogin');
+const loginError = document.getElementById('loginError');
+const registerError = document.getElementById('registerError');
+
+// Cloud elements
+const saveCloudBtn = document.getElementById('saveCloud');
+const loadCloudBtn = document.getElementById('loadCloud');
+const cloudModal = document.getElementById('cloudModal');
+const closeCloudModal = document.getElementById('closeCloudModal');
+const cloudModalTitle = document.getElementById('cloudModalTitle');
+const saveCloudForm = document.getElementById('saveCloudForm');
+const loadCloudList = document.getElementById('loadCloudList');
+const mapNameInput = document.getElementById('mapName');
+const saveCloudSubmit = document.getElementById('saveCloudSubmit');
+const mapsList = document.getElementById('mapsList');
+const cloudError = document.getElementById('cloudError');
+
+let currentUser = null;
+let currentUserData = null;
+
+let canvasScale = 1;
 const fontSizeInput = document.getElementById('fontSize');
 const widthLabel = document.querySelector('label[for="width"]');
 const widthInput = document.getElementById('width');
@@ -342,7 +398,7 @@ function handleFileInputChange(event) {
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 50;
+    canvas.height = window.innerHeight - 60;
     draw();
 }
 
@@ -350,10 +406,13 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 function draw() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.setTransform(canvasScale, 0, 0, canvasScale, 0, 0);
     tables.forEach(table => table.draw(ctx, table === selectedTable));
-    
-    // Draw alignment line
+
     if (alignmentLine) {
         ctx.strokeStyle = '#007bff';
         ctx.lineWidth = 2;
@@ -364,7 +423,7 @@ function draw() {
         ctx.stroke();
         ctx.setLineDash([]);
     }
-    
+    ctx.restore();
     updateSeatCounter();
 }
 
@@ -527,8 +586,8 @@ function updateSeatWarning(table) {
 
 canvas.addEventListener('mousedown', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / canvasScale;
+    const y = (e.clientY - rect.top) / canvasScale;
     if (mode === 'select') {
         let found = false;
         for (let table of tables) {
@@ -560,8 +619,8 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('mousemove', (e) => {
     if (isDragging && selectedTable) {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left) / canvasScale;
+        const y = (e.clientY - rect.top) / canvasScale;
         let newX = x - dragOffsetX;
         let newY = y - dragOffsetY;
         
@@ -611,9 +670,23 @@ deleteModeBtn.addEventListener('click', () => {
     canvas.style.cursor = 'pointer';
 });
 
+zoomRange.addEventListener('input', () => {
+    canvasScale = zoomRange.value / 100;
+    zoomValue.textContent = `${zoomRange.value}%`;
+    draw();
+});
+
+function setInitialZoom() {
+    canvasScale = zoomRange.value / 100;
+    zoomValue.textContent = `${zoomRange.value}%`;
+}
+
+setInitialZoom();
+
 deleteAllBtn.addEventListener('click', () => {
     if (confirm('Tem certeza que deseja excluir todas as mesas?')) {
         tables = [];
+        nextTableNumber = 1;
         selectedTable = null;
         sidebar.classList.remove('show');
         draw();
@@ -631,6 +704,220 @@ saveJsonBtn.addEventListener('click', () => {
 loadJsonBtn.addEventListener('click', () => {
     fileInput.click();
 });
+
+// Authentication functions
+function showAuthModal() {
+    authModal.style.display = 'block';
+}
+
+function hideAuthModal() {
+    authModal.style.display = 'none';
+    loginError.textContent = '';
+    registerError.textContent = '';
+}
+
+function switchToLogin() {
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+}
+
+function switchToRegister() {
+    registerTab.classList.add('active');
+    loginTab.classList.remove('active');
+    registerForm.style.display = 'block';
+    loginForm.style.display = 'none';
+}
+
+async function loginUser(email, password) {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        return userCredential.user;
+    } catch (error) {
+        console.error('Login error:', error);
+        const message = error.code ? getAuthErrorMessage(error.code) : error.message;
+        throw new Error(message);
+    }
+}
+
+async function registerUser(name, email, password, birthday) {
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Save user data to Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+            name,
+            email,
+            birthday
+        });
+        
+        return user;
+    } catch (error) {
+        console.error('Register error:', error);
+        const message = error.code ? getAuthErrorMessage(error.code) : error.message;
+        throw new Error(message);
+    }
+}
+
+function getAuthErrorMessage(code) {
+    switch (code) {
+        case 'auth/invalid-email':
+            return 'Email inválido.';
+        case 'auth/user-disabled':
+            return 'Usuário desabilitado.';
+        case 'auth/user-not-found':
+            return 'Usuário não encontrado.';
+        case 'auth/wrong-password':
+            return 'Senha incorreta.';
+        case 'auth/email-already-in-use':
+            return 'Email já está em uso.';
+        case 'auth/weak-password':
+            return 'Senha muito fraca.';
+        case 'auth/popup-closed-by-user':
+            return 'Popup fechado pelo usuário.';
+        case 'auth/cancelled-popup-request':
+            return 'Requisição cancelada.';
+        case 'auth/popup-blocked':
+            return 'Popup bloqueado pelo navegador.';
+        default:
+            return 'Erro de autenticação.';
+    }
+}
+
+async function loginWithGoogle() {
+    try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        // Check if user data exists in Firestore, if not, create it
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+            await setDoc(doc(db, 'users', user.uid), {
+                name: user.displayName || '',
+                email: user.email,
+                birthday: null // Google doesn't provide birthday
+            });
+        }
+        
+        return user;
+    } catch (error) {
+        console.error('Google login error:', error);
+        const message = error.code ? getAuthErrorMessage(error.code) : error.message;
+        throw new Error(message);
+    }
+}
+
+async function logoutUser() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+    }
+}
+
+function updateUIForUser(user) {
+    if (user && currentUserData) {
+        loginBtn.style.display = 'none';
+        userDisplay.style.display = 'inline';
+        userName.textContent = `Olá, ${currentUserData.name || user.email}`;
+        saveCloudBtn.style.display = 'block';
+        loadCloudBtn.style.display = 'block';
+    } else {
+        loginBtn.style.display = 'inline';
+        userDisplay.style.display = 'none';
+        saveCloudBtn.style.display = 'none';
+        loadCloudBtn.style.display = 'none';
+    }
+}
+
+// Cloud functions
+async function saveMapToCloud(name) {
+    if (!currentUser) return;
+    
+    try {
+        const mapData = {
+            name,
+            elements: serializeLayout(),
+            user: {
+                id: currentUser.uid,
+                name: currentUserData.name,
+                email: currentUser.email
+            }
+        };
+        
+        await setDoc(doc(collection(db, 'maps')), mapData);
+        return true;
+    } catch (error) {
+        console.error('Erro ao salvar mapa:', error);
+        throw error;
+    }
+}
+
+async function loadMapsFromCloud() {
+    if (!currentUser) return [];
+    
+    try {
+        const q = query(collection(db, 'maps'), where('user.id', '==', currentUser.uid));
+        const querySnapshot = await getDocs(q);
+        const maps = [];
+        querySnapshot.forEach((doc) => {
+            maps.push({ id: doc.id, ...doc.data() });
+        });
+        return maps;
+    } catch (error) {
+        console.error('Erro ao carregar mapas:', error);
+        throw error;
+    }
+}
+
+function showCloudModal(isSave) {
+    cloudModal.style.display = 'block';
+    cloudError.textContent = '';
+    
+    if (isSave) {
+        cloudModalTitle.textContent = 'Salvar na nuvem';
+        saveCloudForm.style.display = 'block';
+        loadCloudList.style.display = 'none';
+        mapNameInput.focus();
+    } else {
+        cloudModalTitle.textContent = 'Carregar da nuvem';
+        saveCloudForm.style.display = 'none';
+        loadCloudList.style.display = 'block';
+        loadMapsList();
+    }
+}
+
+function hideCloudModal() {
+    cloudModal.style.display = 'none';
+    cloudError.textContent = '';
+}
+
+async function loadMapsList() {
+    try {
+        const maps = await loadMapsFromCloud();
+        mapsList.innerHTML = '';
+        
+        if (maps.length === 0) {
+            mapsList.innerHTML = '<li>Nenhum mapa encontrado.</li>';
+            return;
+        }
+        
+        maps.forEach(map => {
+            const li = document.createElement('li');
+            li.textContent = map.name;
+            li.addEventListener('click', () => {
+                deserializeLayout(map.elements);
+                hideCloudModal();
+            });
+            mapsList.appendChild(li);
+        });
+    } catch (error) {
+        cloudError.textContent = 'Erro ao carregar mapas.';
+    }
+}
 
 downloadPngBtn.addEventListener('click', () => {
     downloadCanvasPng();
@@ -849,6 +1136,116 @@ seatCounter.addEventListener('mouseover', (e) => {
 
 seatCounter.addEventListener('mouseout', () => {
     tooltip.style.display = 'none';
+});
+
+// Authentication event listeners
+loginBtn.addEventListener('click', showAuthModal);
+
+closeAuthModal.addEventListener('click', hideAuthModal);
+
+authModal.addEventListener('click', (e) => {
+    if (e.target === authModal) {
+        hideAuthModal();
+    }
+});
+
+loginTab.addEventListener('click', switchToLogin);
+
+registerTab.addEventListener('click', switchToRegister);
+
+loginSubmit.addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    try {
+        await loginUser(email, password);
+        hideAuthModal();
+    } catch (error) {
+        loginError.textContent = error.message;
+    }
+});
+
+registerSubmit.addEventListener('click', async () => {
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const birthday = document.getElementById('registerBirthday').value;
+    
+    try {
+        await registerUser(name, email, password, birthday);
+        hideAuthModal();
+    } catch (error) {
+        registerError.textContent = error.message;
+    }
+});
+
+googleLogin.addEventListener('click', async () => {
+    try {
+        await loginWithGoogle();
+        hideAuthModal();
+    } catch (error) {
+        loginError.textContent = error.message;
+    }
+});
+
+userDisplay.addEventListener('click', () => {
+    if (confirm('Deseja fazer logout?')) {
+        logoutUser();
+    }
+});
+
+logoutBtn.addEventListener('click', logoutUser);
+
+// Cloud event listeners
+saveCloudBtn.addEventListener('click', () => {
+    showCloudModal(true);
+});
+
+loadCloudBtn.addEventListener('click', () => {
+    showCloudModal(false);
+});
+
+closeCloudModal.addEventListener('click', hideCloudModal);
+
+cloudModal.addEventListener('click', (e) => {
+    if (e.target === cloudModal) {
+        hideCloudModal();
+    }
+});
+
+saveCloudSubmit.addEventListener('click', async () => {
+    const name = mapNameInput.value.trim();
+    if (!name) {
+        cloudError.textContent = 'Nome do mapa é obrigatório.';
+        return;
+    }
+    
+    try {
+        await saveMapToCloud(name);
+        hideCloudModal();
+        alert('Mapa salvo com sucesso!');
+    } catch (error) {
+        cloudError.textContent = 'Erro ao salvar mapa.';
+    }
+});
+
+// Auth state observer
+onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    if (user) {
+        // Load user data from Firestore
+        try {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists()) {
+                currentUserData = userDoc.data();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar dados do usuário:', error);
+        }
+    } else {
+        currentUserData = null;
+    }
+    updateUIForUser(user);
 });
 
 draw();

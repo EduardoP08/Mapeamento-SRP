@@ -12,8 +12,20 @@
         <button id="selectMode">Selecionar</button>
         <button id="deleteMode">Excluir</button>
         <button id="deleteAll">Excluir Tudo</button>
+        <div class="toolbar-zoom">
+            <label for="zoomRange">Zoom</label>
+            <input id="zoomRange" type="range" min="25" max="150" value="100">
+            <span id="zoomValue">100%</span>
+        </div>
         <span id="seatCounter">Assentos: 0</span>
         <button id="fileMenuBtn">Arquivo</button>
+        <div id="login">
+            <button id="loginBtn">Entrar</button>
+            <span id="userDisplay" style="display: none;">
+                <span id="userName"></span>
+                <button id="logoutBtn" style="margin-left: 10px;">Sair</button>
+            </span>
+        </div>
     </div>
     <div class="drawer" id="drawer">
         <h3>Adicionar Item</h3>
@@ -34,13 +46,13 @@
         <label for="nameColor">Cor do texto:</label>
         <input type="color" id="nameColor" value="#000000">
 
-        <label for="width">Largura:</label>
+        <label for="width">Largura (cm):</label>
         <input type="number" id="width" min="50" max="400" value="100">
 
-        <label for="height">Altura:</label>
+        <label for="height">Altura (cm):</label>
         <input type="number" id="height" min="50" max="400" value="100">
 
-        <label for="radius">Raio:</label>
+        <label for="radius">Raio (cm):</label>
         <input type="number" id="radius" min="25" max="200" value="50">
 
         <label for="angle">Ângulo de rotação:</label>
@@ -77,11 +89,58 @@
             <h3>Arquivo</h3>
             <button id="saveJson">Salvar neste dispositivo</button>
             <button id="loadJson">Carregar do dispositivo</button>
+            <button id="saveCloud" style="display: none;">Salvar na nuvem</button>
+            <button id="loadCloud" style="display: none;">Carregar da nuvem</button>
             <button id="downloadPng">Baixar PNG</button>
             <button id="closeFileMenu" class="secondary">Fechar</button>
             <input type="file" id="fileInput" accept="application/json" style="display:none;">
         </div>
     </div>
-    <script src="script.js"></script>
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeAuthModal">&times;</span>
+            <div id="authTabs">
+                <button id="loginTab" class="tab active">Login</button>
+                <button id="registerTab" class="tab">Cadastro</button>
+            </div>
+            <div id="loginForm" class="auth-form">
+                <h2>Login</h2>
+                <input type="email" id="loginEmail" placeholder="Email" required>
+                <input type="password" id="loginPassword" placeholder="Senha" required>
+                <button id="loginSubmit">Entrar</button>
+                <hr style="margin: 20px 0;">
+                <button id="googleLogin" class="google-btn">
+                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 18px; height: 18px; margin-right: 10px;">
+                    Entrar com Google
+                </button>
+                <p id="loginError" class="error"></p>
+            </div>
+            <div id="registerForm" class="auth-form" style="display: none;">
+                <h2>Cadastro</h2>
+                <input type="text" id="registerName" placeholder="Nome" required>
+                <input type="email" id="registerEmail" placeholder="Email" required>
+                <input type="password" id="registerPassword" placeholder="Senha" required>
+                <input type="date" id="registerBirthday" required>
+                <button id="registerSubmit">Cadastrar</button>
+                <p id="registerError" class="error"></p>
+            </div>
+        </div>
+    </div>
+    <div id="cloudModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCloudModal">&times;</span>
+            <h2 id="cloudModalTitle">Salvar na nuvem</h2>
+            <div id="saveCloudForm">
+                <input type="text" id="mapName" placeholder="Nome do mapa" required>
+                <button id="saveCloudSubmit">Salvar</button>
+            </div>
+            <div id="loadCloudList" style="display: none;">
+                <h3>Seus mapas:</h3>
+                <ul id="mapsList"></ul>
+            </div>
+            <p id="cloudError" class="error"></p>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

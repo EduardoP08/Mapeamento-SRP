@@ -1,0 +1,24 @@
+{
+  "name": "tcc-mapeamento-srp",
+  "version": "1.0.0",
+  "description": "Um aplicativo web para criar e gerenciar layouts de mesas e assentos em eventos.",
+  "main": "firebase.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EduardoP08/Mapeamento-SRP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/EduardoP08/Mapeamento-SRP/issues"
+  },
+  "homepage": "https://github.com/EduardoP08/Mapeamento-SRP#readme",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
