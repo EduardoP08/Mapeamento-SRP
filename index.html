@@ -4,35 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapeamento de Mesas em Eventos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="toolbar">
-        <button id="toggleDrawer">☰ Menu</button>
-        <button id="selectMode">Selecionar</button>
-        <button id="deleteMode">Excluir</button>
-        <button id="deleteAll">Excluir Tudo</button>
-        <div class="toolbar-zoom">
-            <label for="zoomRange">Zoom</label>
-            <input id="zoomRange" type="range" min="25" max="150" value="100">
-            <span id="zoomValue">100%</span>
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="toggleDrawer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true">
+                        <rect x="2" y="3" width="12" height="1.5"></rect>
+                        <rect x="2" y="7" width="12" height="1.5"></rect>
+                        <rect x="2" y="11" width="12" height="1.5"></rect>
+                    </svg>
+                    <span class="d-none d-sm-inline">Menu</span>
+                </button>
+                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="selectMode">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
+                        <path d="M173.3 66.5C181.4 62.4 191.2 63.3 198.4 68.8L518.4 308.7C526.7 314.9 530 325.7 526.8 335.5C523.6 345.3 514.4 351.9 504 351.9L351.7 351.9L440.6 529.6C448.5 545.4 442.1 564.6 426.3 572.5C410.5 580.4 391.3 574 383.4 558.2L294.5 380.5L203.2 502.3C197 510.6 186.2 513.9 176.4 510.7C166.6 507.5 160 498.3 160 488L160 88C160 78.9 165.1 70.6 173.3 66.5z"/>
+                    </svg>
+                    <span class="d-none d-sm-inline">Selecionar</span>
+                </button>
+                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="deleteMode">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
+                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
+                    </svg>
+                    <span class="d-none d-sm-inline">Excluir</span>
+                </button>
+                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="deleteAll">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1"  aria-hidden="true">
+                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
+                    </svg>
+                    <span class="d-none d-sm-inline">Excluir Tudo</span>
+                </button>
+
+                <div class="input-group input-group-sm me-3 align-items-center toolbar-zoom">
+                    <label class="input-group-text bg-secondary text-white" for="zoomRange">Zoom</label>
+                    <input id="zoomRange" type="range" min="25" max="150" value="100" class="form-range">
+                    <span id="zoomValue" class="badge bg-secondary ms-2">100%</span>
+                </div>
+
+                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="fileMenuBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
+                        <path d="M304 112L192 112C183.2 112 176 119.2 176 128L176 512C176 520.8 183.2 528 192 528L448 528C456.8 528 464 520.8 464 512L464 272L376 272C336.2 272 304 239.8 304 200L304 112zM444.1 224L352 131.9L352 200C352 213.3 362.7 224 376 224L444.1 224zM128 128C128 92.7 156.7 64 192 64L325.5 64C342.5 64 358.8 70.7 370.8 82.7L493.3 205.3C505.3 217.3 512 233.6 512 250.6L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 128z"/>
+                    </svg>
+                    <span class="d-none d-sm-inline">Arquivo</span>
+                </button>
+            </div>
+            <div class="d-flex align-items-center ms-auto">
+                <span id="seatCounter" class="text-white fw-bold me-3">Assentos: 0</span>
+                <div id="login">
+                    <button class="btn btn-outline-light btn-sm" id="loginBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true">
+                            <circle cx="8" cy="5" r="2"></circle>
+                            <path d="M2 13c0-3 4-5 6-5s6 2 6 5v1H2v-1z"></path>
+                        </svg>
+                        <span class="d-none d-sm-inline">Entrar</span>
+                    </button>
+                    <span id="userDisplay" style="display: none;" class="ms-2 text-white">
+                        <span id="userName"></span>
+                        <button class="btn btn-link btn-sm text-decoration-none text-white" d-flex" id="logoutBtn" style="margin-left: 10px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
+                                <path d="M224 160C241.7 160 256 145.7 256 128C256 110.3 241.7 96 224 96L160 96C107 96 64 139 64 192L64 448C64 501 107 544 160 544L224 544C241.7 544 256 529.7 256 512C256 494.3 241.7 480 224 480L160 480C142.3 480 128 465.7 128 448L128 192C128 174.3 142.3 160 160 160L224 160zM566.6 342.6C579.1 330.1 579.1 309.8 566.6 297.3L438.6 169.3C426.1 156.8 405.8 156.8 393.3 169.3C380.8 181.8 380.8 202.1 393.3 214.6L466.7 288L256 288C238.3 288 224 302.3 224 320C224 337.7 238.3 352 256 352L466.7 352L393.3 425.4C380.8 437.9 380.8 458.2 393.3 470.7C405.8 483.2 426.1 483.2 438.6 470.7L566.6 342.7z"/>
+                            </svg>
+                            <span class="d-none d-sm-inline">Sair</span>
+                        </button>
+                    </span>
+                </div>
+            </div>
         </div>
-        <span id="seatCounter">Assentos: 0</span>
-        <button id="fileMenuBtn">Arquivo</button>
-        <div id="login">
-            <button id="loginBtn">Entrar</button>
-            <span id="userDisplay" style="display: none;">
-                <span id="userName"></span>
-                <button id="logoutBtn" style="margin-left: 10px;">Sair</button>
-            </span>
-        </div>
-    </div>
+    </nav>
     <div class="drawer" id="drawer">
         <h3>Adicionar Item</h3>
         <button id="addSquare">Mesa Quadrada</button>
         <button id="addRound">Mesa Redonda</button>
-        <button id="addSeat">Acento</button>
-        <button id="addRoundSeat">Acento Redondo</button>
+        <button id="addSeat">Assento</button>
+        <button id="addRoundSeat">Assento Redondo</button>
+        <button id="addCustomArea">Área Customizada</button>
+        <button id="addCustomCircleArea">Área Circular Customizada</button>
+        <button id="addLabel">Etiqueta</button>
     </div>
     <canvas id="canvas"></canvas>
     <div class="sidebar" id="sidebar">
@@ -69,16 +120,21 @@
 
         <label for="seats">Quantidade de assentos:</label>
         <input type="number" id="seats" min="0" max="12" value="8">
-        <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 acentos caso esteja utilizando as mesas do local</div>
+        <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 assentos caso esteja utilizando as mesas do local</div>
 
         <label for="counterEnabled" class="checkbox-inline" id="counterEnabledLabel" style="display:none;">
             <input type="checkbox" id="counterEnabled" checked>
-            <span>Contador de acentos</span>
+            <span>Contador de assentos</span>
         </label>
 
         <label for="cornerSeats" class="checkbox-inline">
             <input type="checkbox" id="cornerSeats" checked>
-            <span>Acento nas pontas</span>
+            <span>Assento nas pontas</span>
+        </label>
+
+        <label for="halfCircle" class="checkbox-inline" id="halfCircleLabel" style="display:none;">
+            <input type="checkbox" id="halfCircle">
+            <span>Meio círculo</span>
         </label>
 
         <button id="duplicate">Duplicar</button>

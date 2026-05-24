@@ -66,6 +66,15 @@ body {
     background-color: #777;
 }
 
+/* Keep the "Excluir Tudo" button on a single line and make it wider */
+#deleteAll {
+    white-space: nowrap;
+    min-width: 140px;
+    padding-left: 18px;
+    padding-right: 18px;
+    display: inline-block;
+}
+
 #seatCounter {
     margin-left: auto;
     font-weight: bold;
@@ -165,9 +174,9 @@ canvas {
     position: absolute;
     top: 60px;
     left: 0;
-    width: 100vw;
-    height: calc(100vh - 60px);
-    background-color: #fff;
+    width: auto;
+    height: auto;
+    background-color: rgb(247, 247, 247);
     cursor: crosshair;
 }
 
