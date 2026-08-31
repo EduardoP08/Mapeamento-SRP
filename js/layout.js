@@ -21,7 +21,8 @@ export function serializeLayout() {
             seatColor: table.seatColor,
             counterEnabled: table.counterEnabled,
             fontSize: table.fontSize,
-            isHalfCircle: table.isHalfCircle
+            isHalfCircle: table.isHalfCircle,
+            groupId: table.groupId || null
         }))
     }, null, 2);
 }
@@ -32,24 +33,28 @@ export function deserializeLayout(json) {
         throw new Error('Arquivo inválido');
     }
 
-    state.tables = data.tables.map(item => new Table(
-        item.type,
-        item.x,
-        item.y,
-        item.width,
-        item.height,
-        item.radius,
-        item.angle,
-        item.color,
-        item.name,
-        item.seats,
-        item.nameColor,
-        item.cornerSeats,
-        item.seatColor,
-        item.counterEnabled,
-        item.fontSize,
-        item.isHalfCircle
-    ));
+    state.tables = data.tables.map(item => {
+        const table = new Table(
+            item.type,
+            item.x,
+            item.y,
+            item.width,
+            item.height,
+            item.radius,
+            item.angle,
+            item.color,
+            item.name,
+            item.seats,
+            item.nameColor,
+            item.cornerSeats,
+            item.seatColor,
+            item.counterEnabled,
+            item.fontSize,
+            item.isHalfCircle
+        );
+        if (item.groupId) table.groupId = item.groupId;
+        return table;
+    });
 
     state.nextTableNumber = typeof data.nextTableNumber === 'number' ? data.nextTableNumber : 1;
     if (state.nextTableNumber <= 1) {

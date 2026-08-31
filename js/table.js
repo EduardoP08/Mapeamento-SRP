@@ -11,7 +11,7 @@ function hexToRgba(hex, alpha) {
 }
 
 export class Table {
-    constructor(type, x, y, width, height, radius, angle, color, name, seats, nameColor = '#000000', cornerSeats = true, seatColor = '#dddddd', counterEnabled = true, fontSize = 24, isHalfCircle = false) {
+    constructor(type, x, y, width, height, radius, angle, color, name, seats, nameColor = '#000000', cornerSeats = true, seatColor = '#dddddd', counterEnabled = true, fontSize = 54, isHalfCircle = false) {
         this.type = type;
         this.x = x;
         this.y = y;

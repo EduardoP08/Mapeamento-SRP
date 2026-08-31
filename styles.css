@@ -36,13 +36,13 @@ body {
 }
 
 .toolbar-zoom {
-    padding: 5px 12px;
-    margin: 0 5px;
+    padding: 4px 8px;
+    margin: 0 6px;
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #555;
-    border-radius: 8px;
+    background: transparent;
+    border-radius: 6px;
 }
 
 .toolbar-zoom label {
@@ -51,7 +51,7 @@ body {
 }
 
 .toolbar-zoom input[type="range"] {
-    width: 120px;
+    width: 110px;
 }
 
 .toolbar-zoom span {
@@ -62,22 +62,42 @@ body {
     background-color: #444;
 }
 
+/* Toolbar map name styling */
+#toolbarMapName {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+/* Make the input group expand to fill remaining space */
+.input-group.flex-grow-1 {
+    flex: 1 1 auto;
+    max-width: none;
+}
+
+/* Slightly reduce default navbar button spacing */
+.navbar .btn {
+    padding: 6px 8px;
+}
+
 .toolbar button:hover {
     background-color: #777;
 }
 
-/* Keep the "Excluir Tudo" button on a single line and make it wider */
-#deleteAll {
+#deleteAll, #toggleDrawer {
     white-space: nowrap;
-    min-width: 140px;
-    padding-left: 18px;
-    padding-right: 18px;
     display: inline-block;
 }
 
 #seatCounter {
     margin-left: auto;
     font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 4px 8px;
 }
 
 .file-menu-overlay {
@@ -94,6 +114,26 @@ body {
     display: flex;
 }
 
+/* Utility to force-hide elements when JS toggles visibility */
+.hidden {
+    display: none !important;
+}
+
+/* Melhor visual para o popover do contador de assentos */
+.popover-tooltip {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.12);
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 1200;
+    pointer-events: none;
+    min-width: 220px;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
 .file-menu {
     width: 320px;
     padding: 20px;
@@ -102,31 +142,18 @@ body {
     box-shadow: 0 16px 48px rgba(0,0,0,0.25);
 }
 
-.file-menu h3 {
+.file-menu h5 {
     margin-top: 0;
     margin-bottom: 16px;
     font-size: 1.25rem;
 }
 
 .file-menu button {
-    display: block;
-    width: 100%;
-    margin: 8px 0;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    background: #4CAF50;
-    color: white;
-    cursor: pointer;
-    font-weight: 700;
+    font-weight: 500;
 }
 
-.file-menu button.secondary {
-    background: #777;
-}
-
-.file-menu button:hover {
-    opacity: 0.95;
+.file-menu button i {
+    width: 18px;
 }
 
 
@@ -136,8 +163,8 @@ body {
     left: 0;
     width: 220px;
     height: calc(100vh - 60px);
-    background-color: #f4f4f4;
-    border-right: 1px solid #ccc;
+    background-color: #fafafa;
+    border-right: 1px solid #e6e6e6;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     z-index: 999;
@@ -154,20 +181,148 @@ body {
     margin-top: 0;
 }
 
-.drawer button {
-    display: block;
-    width: 100%;
-    margin: 10px 0;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
+.drawer .accordion-button {
+    background: transparent;
+    color: #222;
     border: none;
-    cursor: pointer;
-    border-radius: 4px;
+    padding: 0.75rem 0.5rem;
+    font-weight: 600;
+    box-shadow: none;
+}
+.drawer .accordion-button::after { display: none; }
+.drawer .accordion-button:focus {
+    box-shadow: none;
+}
+.drawer .accordion-button.collapsed {
+    color: #333;
+}
+.drawer .accordion-body .btn {
+    background: transparent;
+    color: #111;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.drawer .accordion-body .btn:hover {
+    background: #f0f0f0;
 }
 
-.drawer button:hover {
-    background-color: #45a049;
+.saved-items-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #e6e6e6;
+}
+
+.saved-items-section h4 {
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+    color: #263238;
+}
+
+.saved-items-list {
+    display: grid;
+    gap: 5px;
+}
+
+.saved-item-row {
+    display: flex;
+    gap: 4px;
+    align-items: stretch;
+    width: 100%;
+    height: 36px;
+}
+
+.saved-item-button {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    gap: 8px;
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background: #fff;
+    color: #263238;
+    text-align: left;
+    cursor: pointer;
+}
+
+.saved-item-row .saved-item-button {
+    flex: 1;
+    min-width: 0;
+}
+
+.saved-item-row .saved-item-button span {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#savedGroups {
+    margin-top: 0;
+}
+
+.saved-item-edit {
+    box-sizing: border-box;
+    width: 32px;
+    height: 36px;
+    min-width: 32px;
+    max-width: 32px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    background: #fff;
+    color: #52636b;
+    cursor: pointer;
+}
+
+.saved-item-edit:hover {
+    background: #f0f4f6;
+    color: #1976d2;
+}
+
+.add-item-button {
+    display: flex;
+    align-items: center;
+    text-align: left;
+}
+
+.add-item-button i,
+.saved-item-button i {
+    width: 16px;
+    text-align: center;
+    flex: 0 0 16px;
+}
+
+.saved-item-modal-content {
+    max-width: 420px;
+}
+
+.saved-item-button:hover {
+    background: #f0f4f6;
+    border-color: #aebcc3;
+}
+
+.saved-items-empty {
+    color: #68757a;
+    font-size: 0.78rem;
+}
+
+.chevron-icon {
+    transition: transform 0.18s ease;
+    color: #666;
+}
+.accordion-button.collapsed .chevron-icon {
+    transform: rotate(0deg);
+}
+.accordion-button:not(.collapsed) .chevron-icon {
+    transform: rotate(180deg);
 }
 
 canvas {
@@ -180,13 +335,116 @@ canvas {
     cursor: crosshair;
 }
 
+.object-toolbar {
+    position: fixed;
+    display: none;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    background: rgba(38, 50, 56, 0.96);
+    border-radius: 7px;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.25);
+    transform: translate(-50%, -100%);
+    z-index: 1600;
+}
+
+.object-toolbar.show {
+    display: flex;
+}
+
+.object-toolbar button {
+    width: 29px;
+    height: 29px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+}
+
+.object-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.object-toolbar button.delete-action {
+    color: #ff6b6b;
+}
+
+.object-toolbar button.delete-action:hover {
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.object-toolbar button.save-action,
+.object-toolbar button#floatingSaveBtn {
+    color: #82b1ff;
+}
+
+.customize-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.customize-title-row h2 {
+    margin-bottom: 8px;
+    border-bottom: 0;
+}
+
+.customize-title-row button {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #1976d2;
+    cursor: pointer;
+}
+
+.customize-title-row button:hover {
+    background: #eaf2fb;
+}
+
+/* Floating zoom buttons (bottom-right, stacked) */
+.zoom-controls {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1500;
+    transition: right 0.3s ease;
+}
+.zoom-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(51,51,51,0.95);
+    color: #fff;
+    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    cursor: pointer;
+}
+.zoom-btn:active { transform: translateY(1px); }
+.zoom-btn:hover { background: rgba(70,70,70,0.98); }
+
 .sidebar {
     position: fixed;
     top: 60px;
     right: 0;
     width: 320px;
     height: calc(100vh - 60px);
-    padding: 20px;
+    padding: 16px;
     background-color: #fff;
     border-left: 1px solid #ccc;
     box-shadow: -2px 0 5px rgba(0,0,0,0.1);
@@ -204,11 +462,139 @@ canvas {
 .sidebar h2 {
     margin-top: 0;
     margin-bottom: 20px;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: #333;
     border-bottom: 1px solid #e0e0e0;
     padding-bottom: 12px;
+}
+
+.customize-accordion {
+    --bs-accordion-border-color: #e4e7eb;
+    --bs-accordion-btn-padding-x: 10px;
+    --bs-accordion-btn-padding-y: 7px;
+    --bs-accordion-body-padding-x: 10px;
+    --bs-accordion-body-padding-y: 8px;
+}
+
+.customize-accordion .accordion-button {
+    color: #263238;
+    font-size: 0.86rem;
+    font-weight: 700;
+    background: #f6f8f9;
+    box-shadow: none;
+}
+
+.customize-accordion .accordion-button:not(.collapsed) {
+    color: #263238;
+    background: #eef2f3;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.customize-accordion .accordion-body {
+    background: #fff;
+}
+
+.customize-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+}
+
+.field-group,
+.color-field {
+    min-width: 0;
+    margin-bottom: 6px;
+}
+
+.field-group label,
+.color-field label {
+    display: block;
+    margin: 0 0 3px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #526066;
+}
+
+.sidebar .customize-accordion input[type="number"],
+.sidebar .customize-accordion input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 7px;
+    border-radius: 6px;
+}
+
+.stepper {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) 28px;
+    gap: 3px;
+    align-items: stretch;
+}
+
+.stepper button {
+    padding: 0;
+    border: 1px solid #cbd2d6;
+    border-radius: 6px;
+    background: #f2f4f5;
+    color: #263238;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#rotationField .stepper {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+}
+
+.stepper button:hover {
+    background: #e1e6e8;
+}
+
+.color-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 6px;
+    align-items: center;
+}
+
+.sidebar .color-row input[type="color"] {
+    width: 34px;
+    height: 28px;
+    padding: 3px;
+    border: 1px solid #cbd2d6;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.color-swatches {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.color-swatches button {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: var(--swatch-color);
+    box-shadow: 0 0 0 1px #c5cdd1;
+    cursor: pointer;
+}
+
+.customize-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.customize-actions button {
+    flex: 1;
+    margin: 0;
+}
+
+.legacy-control {
+    display: none !important;
 }
 
 .sidebar label {
@@ -236,14 +622,32 @@ canvas {
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
 }
 
-.sidebar input[type="number"], input[type="text"] {
+.sidebar input[type="number"],
+.sidebar input[type="text"] {
     width: 90%;
 }
 
 .checkbox-inline input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #4CAF50;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    margin: 0 6px 0 0;
+    border: 1px solid #6d777c;
+    border-radius: 3px;
+    background: #fff;
+    vertical-align: -3px;
+    cursor: pointer;
+}
+
+.checkbox-inline input[type="checkbox"]:checked {
+    border-color: #111;
+    background: #111;
+}
+
+.checkbox-inline input[type="checkbox"]:focus-visible {
+    outline: 2px solid rgba(76, 175, 80, 0.45);
+    outline-offset: 2px;
 }
 
 .checkbox-inline span {
@@ -252,6 +656,7 @@ canvas {
 
 .sidebar input[type="range"] {
   width: 100%;
+    appearance: none;
   -webkit-appearance: none;
   height: 6px;
   background: #ccc;
@@ -261,14 +666,48 @@ canvas {
 
 .sidebar input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
+    appearance: none;
   width: 16px;
   height: 16px;
   background: #4CAF50;
   border-radius: 50%;
   cursor: pointer;
 }
+
+.customize-accordion .accordion-button:hover {
+    background-color: #eef2f3 !important;
+}
+
+.customize-accordion .stepper button:hover {
+    background-color: #e1e6e8 !important;
+}
 .sidebar input[type="color"] {
-    height: 40px;
+    height: 28px;
+}
+
+.sidebar .customize-accordion label,
+.sidebar .customize-accordion .field-group label,
+.sidebar .customize-accordion .color-field label {
+    margin-top: 0;
+    margin-bottom: 3px;
+    font-size: 0.72rem;
+}
+
+.sidebar .customize-accordion .checkbox-inline {
+    margin: 4px 0 6px;
+    font-size: 0.76rem;
+}
+
+.sidebar .customize-accordion .checkbox-inline input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+}
+
+.sidebar .customize-actions #duplicate,
+.sidebar .customize-actions #delete {
+    padding: 7px 0;
+    margin-top: 0;
+    font-size: 0.82rem;
 }
 
 .warning-message {
@@ -305,6 +744,21 @@ canvas {
     border: 1px solid #d32f2f;
     color: #fff;
     margin-right: 0;
+}
+
+.sidebar .customize-accordion input[type="number"],
+.sidebar .customize-accordion input[type="text"] {
+    height: 30px;
+    padding: 4px 7px;
+}
+
+.sidebar .customize-actions #duplicate {
+    background-color: #1976d2;
+    border-color: #125ea8;
+}
+
+.sidebar .customize-actions #duplicate:hover {
+    background-color: #1565c0;
 }
 
 /* Modal styles */
@@ -419,6 +873,48 @@ canvas {
 
 #mapsList li:hover {
     background-color: #f1f1f1;
+}
+
+/* Estilo para itens de mapa com ações */
+.map-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.map-item-name {
+    flex: 1;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.map-item-name:hover {
+    background: #e9ecef;
+}
+
+.map-item-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.map-item-actions button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-item-actions button:hover {
+    transform: scale(1.1);
 }
 
 #duplicate:hover,

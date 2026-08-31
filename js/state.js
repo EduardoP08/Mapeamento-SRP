@@ -1,6 +1,9 @@
 export const state = {
     tables: [],
     selectedTable: null,
+    selectedTables: [],
+    groupLocked: false,
+    multiSelectionRect: null,
     hoveredTable: null,
     mode: 'select',
     nextTableNumber: 1,
@@ -14,6 +17,10 @@ export const state = {
     dragOffsetX: 0,
     dragOffsetY: 0,
     alignmentLine: null,
+    showGrid: false,
+    showMeasures: false,
     currentUser: null,
     currentUserData: null,
+    // id do mapa carregado da nuvem (se houver)
+    currentCloudMapId: null,
 };

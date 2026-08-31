@@ -1,23 +1,253 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, deleteModeBtn, deleteAllBtn, fileMenuBtn, fileMenuOverlay, saveJsonBtn, loadJsonBtn, downloadPngBtn, closeFileMenuBtn, fileInput, nameInput, zoomRange, zoomValue, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, saveCloudBtn, loadCloudBtn, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteAllBtn, fileDropdownBtn, fileMenuOverlay, saveJsonBtn, loadJsonBtn, downloadPngBtn, closeFileMenuBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, saveCloudBtn, loadCloudBtn, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
 import { draw, getCanvasCoords } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
-import { saveMapToCloud, loadMapsFromCloud } from './cloud.js';
+import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
 import { Table } from './table.js';
+import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn } from './dom.js';
 
 const tooltip = document.createElement('div');
-tooltip.style.position = 'absolute';
-tooltip.style.background = 'white';
-tooltip.style.border = '1px solid black';
-tooltip.style.padding = '5px';
+tooltip.className = 'popover-tooltip';
 tooltip.style.display = 'none';
-tooltip.style.pointerEvents = 'none';
-tooltip.style.zIndex = '1000';
 document.body.appendChild(tooltip);
 
-function openFileMenu() {
-    fileMenuOverlay.classList.add('show');
+// saveMode: 'cloud' | 'local' | 'rename'
+let saveMode = 'cloud';
+let pendingRenameMapId = null;
+let pendingNewAfterSave = false;
+let dragFrameId = null;
+let pendingDragX = null;
+let pendingDragY = null;
+let dragSnapTargets = [];
+const undoHistory = [];
+const redoHistory = [];
+const HISTORY_LIMIT = 10;
+let historySuspended = false;
+let dragHistorySnapshot = null;
+let multiSelectionStart = null;
+let multiSelectionRect = null;
+let groupToSave = null;
+let groupDragOffsets = [];
+let temporaryShiftSelection = false;
+let nextGroupId = 1;
+const SNAP_DISTANCE = 8;
+
+function captureHistoryState() {
+    return JSON.stringify({
+        layout: serializeLayout(),
+        selectedIndex: state.selectedTable ? state.tables.indexOf(state.selectedTable) : -1
+    });
+}
+
+function updateHistoryButtons() {
+    if (undoBtn) undoBtn.disabled = undoHistory.length === 0;
+    if (redoBtn) redoBtn.disabled = redoHistory.length === 0;
+}
+
+function clearHistory() {
+    undoHistory.length = 0;
+    redoHistory.length = 0;
+    updateHistoryButtons();
+}
+
+function recordHistory(snapshot = captureHistoryState()) {
+    if (historySuspended) return;
+    if (undoHistory[undoHistory.length - 1] !== snapshot) {
+        undoHistory.push(snapshot);
+        if (undoHistory.length > HISTORY_LIMIT) undoHistory.shift();
+    }
+    redoHistory.length = 0;
+    updateHistoryButtons();
+}
+
+function pushHistoryEntry(history, snapshot) {
+    history.push(snapshot);
+    if (history.length > HISTORY_LIMIT) history.shift();
+}
+
+function restoreHistoryState(snapshot) {
+    const historyState = JSON.parse(snapshot);
+    historySuspended = true;
+    deserializeLayout(historyState.layout);
+    const selectedTable = historyState.selectedIndex >= 0
+        ? state.tables[historyState.selectedIndex]
+        : null;
+    selectTable(selectedTable || null);
+    historySuspended = false;
+    draw();
+}
+
+function undo() {
+    if (!undoHistory.length) return;
+    pushHistoryEntry(redoHistory, captureHistoryState());
+    restoreHistoryState(undoHistory.pop());
+    updateHistoryButtons();
+}
+
+function redo() {
+    if (!redoHistory.length) return;
+    pushHistoryEntry(undoHistory, captureHistoryState());
+    restoreHistoryState(redoHistory.pop());
+    updateHistoryButtons();
+}
+
+function getSnappedDragPosition(x, y) {
+    let snappedX = x;
+    let snappedY = y;
+    let closestX = SNAP_DISTANCE + 1;
+    let closestY = SNAP_DISTANCE + 1;
+    const snapLines = [];
+
+    for (const target of dragSnapTargets) {
+        const distanceX = Math.abs(x - target.x);
+        const distanceY = Math.abs(y - target.y);
+
+        if (distanceX < closestX) {
+            closestX = distanceX;
+            snappedX = target.x;
+        }
+        if (distanceY < closestY) {
+            closestY = distanceY;
+            snappedY = target.y;
+        }
+    }
+
+    if (closestX <= SNAP_DISTANCE) {
+        snapLines.push({
+            x1: snappedX,
+            y1: 0,
+            x2: snappedX,
+            y2: canvas.height / (state.canvasScale || 1)
+        });
+    }
+    if (closestY <= SNAP_DISTANCE) {
+        snapLines.push({
+            x1: 0,
+            y1: snappedY,
+            x2: canvas.width / (state.canvasScale || 1),
+            y2: snappedY
+        });
+    }
+
+    return { x: snappedX, y: snappedY, snapLines };
+}
+
+function applyPendingDrag() {
+    dragFrameId = null;
+    if (!state.isDragging || !state.selectedTable || pendingDragX === null) return;
+    const snappedPosition = getSnappedDragPosition(pendingDragX, pendingDragY);
+    if (state.selectedTables.length && groupDragOffsets.length) {
+        const anchor = groupDragOffsets.find(entry => entry.table === state.selectedTable);
+        const deltaX = snappedPosition.x - (anchor?.x || state.selectedTable.x);
+        const deltaY = snappedPosition.y - (anchor?.y || state.selectedTable.y);
+        state.selectedTables.forEach(table => {
+            const offset = groupDragOffsets.find(entry => entry.table === table);
+            table.x = offset.x + deltaX;
+            table.y = offset.y + deltaY;
+        });
+    } else {
+        state.selectedTable.x = snappedPosition.x;
+        state.selectedTable.y = snappedPosition.y;
+    }
+    state.alignmentLine = snappedPosition.snapLines;
+    draw();
+}
+
+function scheduleDragUpdate(x, y) {
+    pendingDragX = x;
+    pendingDragY = y;
+    if (dragFrameId === null) {
+        dragFrameId = requestAnimationFrame(applyPendingDrag);
+    }
+}
+
+function flushPendingDrag() {
+    if (dragFrameId !== null) {
+        cancelAnimationFrame(dragFrameId);
+        dragFrameId = null;
+    }
+    if (state.selectedTable && pendingDragX !== null) {
+        const snappedPosition = getSnappedDragPosition(pendingDragX, pendingDragY);
+        if (state.selectedTables.length && groupDragOffsets.length) {
+            const anchor = groupDragOffsets.find(entry => entry.table === state.selectedTable);
+            const deltaX = snappedPosition.x - (anchor?.x || state.selectedTable.x);
+            const deltaY = snappedPosition.y - (anchor?.y || state.selectedTable.y);
+            state.selectedTables.forEach(table => {
+                const offset = groupDragOffsets.find(entry => entry.table === table);
+                table.x = offset.x + deltaX;
+                table.y = offset.y + deltaY;
+            });
+        } else {
+            state.selectedTable.x = snappedPosition.x;
+            state.selectedTable.y = snappedPosition.y;
+        }
+        state.alignmentLine = snappedPosition.snapLines;
+    }
+    pendingDragX = null;
+    pendingDragY = null;
+    dragSnapTargets = [];
+}
+
+function finishPendingNewIfRequested() {
+    if (pendingNewAfterSave) {
+        pendingNewAfterSave = false;
+        state.tables = [];
+        state.nextTableNumber = 1;
+        state.selectedTable = null;
+        state.currentCloudMapId = null;
+        sidebar.classList.remove('show');
+        if (toolbarMapName) toolbarMapName.value = 'Novo mapa';
+        clearHistory();
+        draw();
+    }
+}
+// Zoom state: percent and mapping (100% -> scale 0.4)
+let zoomPercent = 100;
+const ZOOM_MIN = 25;
+const ZOOM_MAX = 200;
+const ZOOM_STEP = 10; // percent per step (buttons click)
+
+function applyZoomPercent(newPercent, focusClientX, focusClientY) {
+    const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newPercent));
+    const beforeScale = state.canvasScale || 1;
+    const afterScale = clamped * 0.004; // mapping: 100 -> 0.4
+
+    // compute focus point in canvas coordinates
+    const rect = canvas.getBoundingClientRect();
+    const clientX = (typeof focusClientX === 'number') ? focusClientX : (rect.left + rect.width / 2);
+    const clientY = (typeof focusClientY === 'number') ? focusClientY : (rect.top + rect.height / 2);
+    const x = (clientX - rect.left - state.canvasOffsetX) / beforeScale;
+    const y = (clientY - rect.top - state.canvasOffsetY) / beforeScale;
+
+    state.canvasOffsetX -= (afterScale - beforeScale) * x;
+    state.canvasOffsetY -= (afterScale - beforeScale) * y;
+
+    zoomPercent = clamped;
+    state.canvasScale = afterScale;
+    updateObjectToolbarPosition();
+    draw();
+}
+
+function updateZoomControlsPosition() {
+    const zoomControls = document.getElementById('zoomControls');
+    if (!zoomControls) return;
+    // If sidebar is visible, shift zoom controls left by sidebar width + 10px margin
+    if (sidebar.classList.contains('show')) {
+        const sbWidth = sidebar.getBoundingClientRect().width || 320;
+        zoomControls.style.right = `${sbWidth + 10}px`;
+    } else {
+        zoomControls.style.right = `10px`;
+    }
+}
+
+function downloadJsonWithName(filename) {
+    const blob = new Blob([serializeLayout()], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename.endsWith('.json') ? filename : `${filename}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function closeFileMenu() {
@@ -28,14 +258,18 @@ function downloadJson() {
     const blob = new Blob([serializeLayout()], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'layout.json';
+    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
+    const safe = base.replace(/[<>:\\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
+    link.download = `${safe}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
 }
 
 function downloadCanvasPng() {
     const link = document.createElement('a');
-    link.download = 'layout.png';
+    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
+    const safe = base.replace(/[<>:\\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
+    link.download = `${safe}.png`;
     link.href = canvas.toDataURL();
     link.click();
 }
@@ -49,7 +283,13 @@ function handleFileInputChange(event) {
             deserializeLayout(reader.result);
             state.selectedTable = null;
             sidebar.classList.remove('show');
+            clearHistory();
             draw();
+            // Atualiza nome na toolbar com o nome do arquivo (sem extensão)
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+            toolbarMapName.value = baseName || 'Novo Mapeamento';
+            // Arquivo local não corresponde a um mapa da nuvem
+            state.currentCloudMapId = null;
         } catch (error) {
             alert('Falha ao carregar arquivo: ' + error.message);
         }
@@ -60,6 +300,15 @@ function handleFileInputChange(event) {
 }
 
 function updateSizeFieldsVisibility(table) {
+    const setVisibility = (id, visible) => {
+        const element = document.getElementById(id);
+        if (element) element.style.display = visible ? '' : 'none';
+    };
+    const setInputGroupVisibility = (input, visible) => {
+        const group = input.closest('.color-field');
+        if (group) group.style.display = visible ? '' : 'none';
+    };
+
     if (!table) {
         widthLabel.style.display = 'none';
         widthInput.style.display = 'none';
@@ -68,6 +317,12 @@ function updateSizeFieldsVisibility(table) {
         radiusLabel.style.display = 'none';
         radiusInput.style.display = 'none';
         cornerSeatsLabel.style.display = 'none';
+        setVisibility('widthField', false);
+        setVisibility('heightField', false);
+        setVisibility('radiusField', false);
+        setVisibility('seatsSection', false);
+        setInputGroupVisibility(colorInput, false);
+        setInputGroupVisibility(seatColorInput, false);
         return;
     }
 
@@ -88,6 +343,12 @@ function updateSizeFieldsVisibility(table) {
         halfCircleLabel.style.display = 'none';
         colorLabel.style.display = 'none';
         colorInput.style.display = 'none';
+        setVisibility('widthField', false);
+        setVisibility('heightField', false);
+        setVisibility('radiusField', false);
+        setVisibility('seatsSection', false);
+        setInputGroupVisibility(colorInput, false);
+        setInputGroupVisibility(seatColorInput, false);
     } else if (table.type === 'square' || table.type === 'seat' || table.type === 'customArea') {
         widthLabel.style.display = 'block';
         widthInput.style.display = 'block';
@@ -104,6 +365,12 @@ function updateSizeFieldsVisibility(table) {
         halfCircleLabel.style.display = 'none';
         colorLabel.style.display = 'block';
         colorInput.style.display = 'block';
+        setVisibility('widthField', true);
+        setVisibility('heightField', true);
+        setVisibility('radiusField', false);
+        setVisibility('seatsSection', table.type === 'square');
+        setInputGroupVisibility(colorInput, true);
+        setInputGroupVisibility(seatColorInput, table.type === 'square');
         updateMaxSeats(table);
     } else if (table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea') {
         widthLabel.style.display = 'none';
@@ -121,6 +388,12 @@ function updateSizeFieldsVisibility(table) {
         halfCircleLabel.style.display = table.type === 'customCircleArea' ? 'block' : 'none';
         colorLabel.style.display = 'block';
         colorInput.style.display = 'block';
+        setVisibility('widthField', false);
+        setVisibility('heightField', false);
+        setVisibility('radiusField', true);
+        setVisibility('seatsSection', table.type === 'round');
+        setInputGroupVisibility(colorInput, true);
+        setInputGroupVisibility(seatColorInput, table.type === 'round');
         updateMaxSeats(table);
     } else {
         widthLabel.style.display = 'none';
@@ -136,6 +409,12 @@ function updateSizeFieldsVisibility(table) {
         seatsLabel.style.display = 'block';
         seatsInput.style.display = 'block';
         halfCircleLabel.style.display = 'none';
+        setVisibility('widthField', false);
+        setVisibility('heightField', false);
+        setVisibility('radiusField', false);
+        setVisibility('seatsSection', false);
+        setInputGroupVisibility(colorInput, true);
+        setInputGroupVisibility(seatColorInput, false);
         updateMaxSeats(table);
     }
 }
@@ -177,10 +456,238 @@ function updateMaxSeats(table) {
     }
 }
 
-export function selectTable(table) {
+const tableTypeLabels = {
+    square: 'Mesa Quadrada',
+    round: 'Mesa Redonda',
+    seat: 'Assento Quadrado',
+    roundSeat: 'Assento Redondo',
+    customArea: 'Área Quadrada',
+    customCircleArea: 'Área Redonda',
+    label: 'Etiqueta'
+};
+
+function updateObjectToolbarPosition() {
+    if (!objectToolbar || !state.selectedTable || !sidebar.classList.contains('show')) return;
+    floatingLockBtn.style.display = 'none';
+    const rect = canvas.getBoundingClientRect();
+    const scale = state.canvasScale || 1;
+    const table = state.selectedTable;
+    const screenX = rect.left + state.canvasOffsetX + table.x * scale;
+    const angle = (table.angle || 0) * Math.PI / 180;
+    const halfWidth = table.width ? table.width / 2 : (table.radius || 0);
+    const halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+    const rotatedHalfHeight = Math.abs(Math.cos(angle) * halfHeight) + Math.abs(Math.sin(angle) * halfWidth);
+    const screenY = rect.top + state.canvasOffsetY + (table.y - rotatedHalfHeight) * scale;
+    objectToolbar.style.left = `${screenX}px`;
+    objectToolbar.style.top = `${Math.max(66, screenY - 8)}px`;
+    objectToolbar.classList.add('show');
+}
+
+function updateFloatingLockIcon() {
+    if (!floatingLockBtn) return;
+    floatingLockBtn.title = state.groupLocked ? 'Destravar grupo' : 'Travar grupo';
+    floatingLockBtn.setAttribute('aria-label', state.groupLocked ? 'Destravar grupo' : 'Travar grupo');
+    floatingLockBtn.innerHTML = `<i class="fas fa-lock${state.groupLocked ? '' : '-open'}" aria-hidden="true"></i>`;
+}
+
+function hideObjectToolbar() {
+    if (objectToolbar) objectToolbar.classList.remove('show');
+}
+
+function serializeTableItem(table) {
+    return {
+        type: table.type,
+        x: table.x,
+        y: table.y,
+        width: table.width,
+        height: table.height,
+        radius: table.radius,
+        angle: table.angle,
+        color: table.color,
+        name: table.name,
+        seats: table.seats,
+        nameColor: table.nameColor,
+        cornerSeats: table.cornerSeats,
+        seatColor: table.seatColor,
+        counterEnabled: table.counterEnabled,
+        fontSize: table.fontSize,
+        isHalfCircle: table.isHalfCircle
+    };
+}
+
+async function saveSelectedItem() {
+    if (!state.selectedTable) return;
+    if (!state.currentUser) {
+        showAuthModal();
+        return;
+    }
+
+    showSavedItemModal(null, state.selectedTable.name || 'Meu item');
+}
+
+function createTableFromSavedItem(itemData) {
+    const item = typeof itemData.item === 'string' ? JSON.parse(itemData.item) : itemData.item;
+    const customizationName = String(item.name ?? '');
+    const isNumberedTable = (item.type === 'square' || item.type === 'round') && /^\d+$/.test(customizationName.trim());
+    const tableName = isNumberedTable ? String(state.nextTableNumber++) : customizationName;
+    const { x, y } = getWindowCenterCanvasCoords();
+    const table = new Table(
+        item.type, x, y, item.width, item.height, item.radius, item.angle,
+        item.color, tableName, item.seats, item.nameColor, item.cornerSeats,
+        item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle
+    );
+    recordHistory();
+    state.tables.push(table);
+    selectTable(table);
+    draw();
+}
+
+const savedItemGroups = {
+    square: savedTables,
+    round: savedTables,
+    seat: savedSeats,
+    roundSeat: savedSeats,
+    customArea: savedAreas,
+    customCircleArea: savedAreas,
+    label: savedLabels
+};
+
+const savedItemIcons = {
+    square: 'fa-square',
+    round: 'fa-circle',
+    seat: 'fa-square',
+    roundSeat: 'fa-circle',
+    customArea: 'fa-vector-square',
+    customCircleArea: 'fa-circle',
+    label: 'fa-tag'
+};
+
+let selectedSavedItem = null;
+let tableToSave = null;
+
+function hideSavedItemModal() {
+    if (savedItemModal) savedItemModal.style.display = 'none';
+    selectedSavedItem = null;
+    tableToSave = null;
+    groupToSave = null;
+}
+
+function showSavedItemModal(item, initialName = '') {
+    selectedSavedItem = item;
+    tableToSave = item || groupToSave ? null : state.selectedTable;
+    savedItemModalTitle.textContent = item ? 'Editar item salvo' : 'Salvar item';
+    deleteSavedItemBtn.style.display = item ? '' : 'none';
+    savedItemName.value = item ? (item.name || '') : initialName;
+    savedItemError.style.display = 'none';
+    savedItemModal.style.display = 'block';
+    savedItemName.focus();
+}
+
+function renderSavedItem(item) {
+    const savedData = JSON.parse(item.item);
+    const group = savedData.type === 'group' ? savedGroups : savedItemGroups[savedData.type];
+    if (!group) return;
+
+    const row = document.createElement('div');
+    row.className = 'saved-item-row';
+
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'saved-item-button';
+    addButton.title = `Adicionar ${item.name}`;
+    addButton.innerHTML = `<i class="fas ${savedData.type === 'group' ? 'fa-object-group' : savedItemIcons[savedData.type]}" aria-hidden="true"></i>`;
+    const name = document.createElement('span');
+    name.textContent = item.name;
+    addButton.appendChild(name);
+    addButton.addEventListener('click', () => {
+        try {
+            const createdTables = savedData.type === 'group' ? createTablesFromSavedGroup(item) : [createTableFromSavedItem(item)];
+            if (savedData.type === 'group') {
+                recordHistory();
+                state.tables.push(...createdTables);
+                state.selectedTables = createdTables;
+                state.selectedTable = null;
+                state.mode = 'multi';
+                state.groupLocked = true;
+                updateFloatingLockIcon();
+                sidebar.classList.remove('show');
+                updateMultiToolbarPosition();
+                draw();
+            }
+        } catch (error) {
+            alert(`Não foi possível adicionar o item: ${error.message}`);
+        }
+    });
+
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'saved-item-edit';
+    editButton.title = 'Editar item salvo';
+    editButton.setAttribute('aria-label', `Editar ${item.name}`);
+    editButton.innerHTML = '<i class="fas fa-pencil-alt" aria-hidden="true"></i>';
+    editButton.addEventListener('click', () => showSavedItemModal(item));
+
+    row.append(addButton, editButton);
+    group.appendChild(row);
+}
+
+async function loadSavedItems() {
+    const groups = [...Object.values(savedItemGroups), savedGroups].filter(Boolean);
+    groups.forEach(group => { group.innerHTML = ''; });
+    if (!state.currentUser) return;
+
+    try {
+        const items = await loadItemsFromCloud();
+        items.forEach(renderSavedItem);
+    } catch (error) {
+        groups.forEach(group => {
+            group.innerHTML = '<span class="saved-items-empty">Não foi possível carregar.</span>';
+        });
+    }
+}
+
+async function saveEditedItemName() {
+    const name = savedItemName.value.trim();
+    if ((!selectedSavedItem && !tableToSave && !groupToSave) || !name) {
+        savedItemError.textContent = 'Informe um nome para o item.';
+        savedItemError.style.display = 'block';
+        return;
+    }
+    try {
+        if (groupToSave) {
+            await saveItemToCloud(name, serializeGroup(groupToSave));
+        } else if (tableToSave) {
+            await saveItemToCloud(name, serializeTableItem(tableToSave));
+            alert('Item salvo com sucesso.');
+        } else {
+            await renameItemInCloud(selectedSavedItem.id, name);
+        }
+        hideSavedItemModal();
+        await loadSavedItems();
+    } catch (error) {
+        savedItemError.textContent = `Não foi possível ${tableToSave ? 'salvar' : 'renomear'} o item: ${error.message}`;
+        savedItemError.style.display = 'block';
+    }
+}
+
+async function deleteSelectedSavedItem() {
+    if (!selectedSavedItem || !window.confirm(`Apagar o item "${selectedSavedItem.name}"?`)) return;
+    try {
+        await deleteItemFromCloud(selectedSavedItem.id);
+        hideSavedItemModal();
+        await loadSavedItems();
+    } catch (error) {
+        savedItemError.textContent = `Não foi possível apagar: ${error.message}`;
+        savedItemError.style.display = 'block';
+    }
+}
+
+export function selectTable(table, showToolbar = true) {
     state.selectedTable = table;
     if (table) {
         sidebar.classList.add('show');
+        const customizeTitle = document.getElementById('customizeTitle');
+        if (customizeTitle) customizeTitle.textContent = tableTypeLabels[table.type] || 'Item';
         nameInput.value = table.name;
         widthInput.value = table.width;
         heightInput.value = table.height;
@@ -189,20 +696,38 @@ export function selectTable(table) {
         angleNumberInput.value = table.angle;
         colorInput.value = table.color;
         nameColorInput.value = table.nameColor;
+        const colorHexInput = document.getElementById('colorHex');
+        const nameColorHexInput = document.getElementById('nameColorHex');
+        const seatColorHexInput = document.getElementById('seatColorHex');
+        if (colorHexInput) colorHexInput.value = table.color.toUpperCase();
+        if (nameColorHexInput) nameColorHexInput.value = table.nameColor.toUpperCase();
+        if (seatColorHexInput) seatColorHexInput.value = table.seatColor.toUpperCase();
         seatColorInput.value = table.seatColor;
         fontSizeInput.value = table.fontSize;
         counterEnabledInput.checked = table.counterEnabled !== false;
         cornerSeatsInput.checked = table.cornerSeats;
         halfCircleInput.checked = table.isHalfCircle === true;
         seatsInput.value = table.seats;
+        posXInput.value = Math.round(table.x);
+        posYInput.value = Math.round(table.y);
         updateSizeFieldsVisibility(table);
         updateSeatWarning(table);
+        if (showToolbar) {
+            updateObjectToolbarPosition();
+        } else {
+            hideObjectToolbar();
+        }
     } else {
         sidebar.classList.remove('show');
+        const customizeTitle = document.getElementById('customizeTitle');
+        if (customizeTitle) customizeTitle.textContent = 'Item';
         halfCircleInput.checked = false;
         updateSizeFieldsVisibility(null);
         updateSeatWarning(null);
+        hideObjectToolbar();
     }
+    // Update zoom controls position when sidebar visibility changes
+    updateZoomControlsPosition();
 }
 
 function updateSeatWarning(table) {
@@ -238,27 +763,43 @@ function switchToRegister() {
 }
 
 export function updateUIForUser(user) {
-    if (user && state.currentUserData) {
-        loginBtn.style.display = 'none';
-        userDisplay.style.display = 'inline';
-        userName.textContent = `Olá, ${state.currentUserData.name || user.email}`;
-        saveCloudBtn.style.display = 'block';
-        loadCloudBtn.style.display = 'block';
+    if (user) {
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (userDisplay) userDisplay.style.display = 'inline-flex';
+        userName.textContent = `Olá, ${state.currentUserData?.name || user.displayName || user.email}`;
+        if (saveCloudBtn) saveCloudBtn.style.display = '';
+        if (loadCloudBtn) loadCloudBtn.style.display = '';
+        loadSavedItems();
     } else {
-        loginBtn.style.display = 'inline';
-        userDisplay.style.display = 'none';
-        saveCloudBtn.style.display = 'none';
-        loadCloudBtn.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = '';
+        if (userName) userName.textContent = '';
+        if (userDisplay) userDisplay.style.display = 'none';
+        if (saveCloudBtn) saveCloudBtn.style.display = 'none';
+        if (loadCloudBtn) loadCloudBtn.style.display = 'none';
+        loadSavedItems();
     }
 }
+
+// Initialize login UI based on current state
+try { updateUIForUser(state.currentUser); } catch (e) { /* ignore */ }
 
 function showCloudModal(isSave) {
     cloudModal.style.display = 'block';
     cloudError.textContent = '';
+    cloudError.style.display = 'none';
     if (isSave) {
-        cloudModalTitle.textContent = 'Salvar na nuvem';
+        // Ajusta título conforme o modo de salvamento
+        if (saveMode === 'local') {
+            cloudModalTitle.textContent = 'Salvar arquivo (JSON)';
+        } else if (saveMode === 'rename') {
+            cloudModalTitle.textContent = 'Renomear mapa';
+        } else {
+            cloudModalTitle.textContent = 'Salvar na nuvem';
+        }
         saveCloudForm.style.display = 'block';
         loadCloudList.style.display = 'none';
+        // Preenche o campo de nome com o que está na toolbar
+        mapNameInput.value = toolbarMapName.value || 'Novo Mapeamento';
         mapNameInput.focus();
     } else {
         cloudModalTitle.textContent = 'Carregar da nuvem';
@@ -271,6 +812,26 @@ function showCloudModal(isSave) {
 function hideCloudModal() {
     cloudModal.style.display = 'none';
     cloudError.textContent = '';
+    cloudError.style.display = 'none';
+}
+
+function formatDate(ts) {
+    if (!ts) return '—';
+    let d;
+    // Firestore Timestamp has toDate()
+    if (typeof ts.toDate === 'function') {
+        d = ts.toDate();
+    } else if (typeof ts === 'number') {
+        d = new Date(ts);
+    } else {
+        d = new Date(ts);
+    }
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yy} ${hh}:${min}`;
 }
 
 async function loadMapsList() {
@@ -279,227 +840,503 @@ async function loadMapsList() {
         mapsList.innerHTML = '';
 
         if (maps.length === 0) {
-            mapsList.innerHTML = '<li>Nenhum mapa encontrado.</li>';
+            mapsList.innerHTML = '<div class="list-group-item">Nenhum mapa encontrado.</div>';
             return;
         }
 
         maps.forEach(map => {
-            const li = document.createElement('li');
-            li.textContent = map.name;
-            li.addEventListener('click', () => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item map-item';
+            
+            // Elemento do nome clicável para carregar
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'map-item-name';
+            nameSpan.textContent = map.name;
+            nameSpan.addEventListener('click', () => {
                 deserializeLayout(map.elements);
                 state.selectedTable = null;
                 sidebar.classList.remove('show');
+                clearHistory();
                 draw();
+                // Marca que o mapa atual foi carregado da nuvem
+                state.currentCloudMapId = map.id || null;
+                // Atualiza o campo de nome da toolbar com o nome do mapa
+                toolbarMapName.value = map.name || 'Novo Mapeamento';
                 hideCloudModal();
             });
-            mapsList.appendChild(li);
+
+            // Data formatada do último salvamento
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'map-item-date';
+            dateSpan.textContent = formatDate(map.date);
+            dateSpan.title = dateSpan.textContent;
+            
+            // Container de ações
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'map-item-actions';
+            
+            // Botão renomear
+            const renameBtn = document.createElement('button');
+            renameBtn.className = 'btn btn-sm btn-warning';
+            renameBtn.title = 'Renomear mapa';
+            renameBtn.innerHTML = '<i class="fas fa-pencil" style="font-size: 14px;"></i>';
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Usar o modal de salvar para renomear
+                saveMode = 'rename';
+                pendingRenameMapId = map.id;
+                mapNameInput.value = map.name || '';
+                showCloudModal(true);
+            });
+            
+            // Botão excluir
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-sm btn-danger';
+            deleteBtn.title = 'Excluir mapa';
+            deleteBtn.innerHTML = '<i class="fas fa-trash" style="font-size: 14px;"></i>';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm(`Tem certeza que deseja excluir "${map.name}"?`)) {
+                    try {
+                        await deleteMapFromCloud(map.id);
+                        await loadMapsList(); // Recarrega lista
+                    } catch (error) {
+                        cloudError.textContent = 'Erro ao excluir mapa.';
+                        cloudError.style.display = 'block';
+                    }
+                }
+            });
+            
+            actionsDiv.appendChild(renameBtn);
+            actionsDiv.appendChild(deleteBtn);
+            
+            item.appendChild(nameSpan);
+            item.appendChild(dateSpan);
+            item.appendChild(actionsDiv);
+            mapsList.appendChild(item);
         });
     } catch (error) {
         cloudError.textContent = 'Erro ao carregar mapas.';
+        cloudError.style.display = 'block';
     }
 }
 
-canvas.addEventListener('mousedown', (e) => {
-    const { x, y } = getCanvasCoords(e);
-    if (state.mode === 'select') {
-        let found = false;
-        let selectedTable = null;
-        
-        // Prioridade de seleção: assentos → mesas → áreas customizadas → etiquetas
-        // 1. Procura etiquetas primeiro (prioridade)
-        selectedTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
-        
-        // 2. Se não encontrou etiqueta, procura assentos
-        if (!selectedTable) {
-            selectedTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
-        }
-        
-        // 3. Se não encontrou assento, procura mesas
-        if (!selectedTable) {
-            selectedTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
-        }
-        
-        // 4. Se não encontrou mesa, procura áreas customizadas
-        if (!selectedTable) {
-            selectedTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
-        }
-        
-        if (selectedTable) {
-            state.selectedTable = selectedTable;
+if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+        const { x, y } = getCanvasCoords(e);
+        temporaryShiftSelection = state.mode === 'select' && e.shiftKey;
+        const clickedTable = findTableAt(x, y);
+        if (clickedTable?.groupId && !temporaryShiftSelection && (state.mode === 'select' || state.mode === 'multi')) {
+            selectLockedGroup(clickedTable);
+            state.selectedTable = clickedTable;
+            pendingDragX = clickedTable.x;
+            pendingDragY = clickedTable.y;
+            groupDragOffsets = state.selectedTables.map(table => ({ table, x: table.x, y: table.y }));
+            dragHistorySnapshot = captureHistoryState();
             state.isDragging = true;
-            state.dragOffsetX = x - selectedTable.x;
-            state.dragOffsetY = y - selectedTable.y;
-            selectTable(selectedTable);
-            found = true;
+            state.dragOffsetX = x - clickedTable.x;
+            state.dragOffsetY = y - clickedTable.y;
             state.isPanning = false;
-        } else {
-            selectTable(null);
-            state.isPanning = true;
+            draw();
+            return;
+        }
+        if (state.selectedTables.length && !state.selectedTables.includes(clickedTable)) {
+            state.mode = 'select';
+            state.selectedTables = [];
+            state.selectedTable = null;
+            state.groupLocked = false;
+            temporaryShiftSelection = false;
+            updateFloatingLockIcon();
+            hideObjectToolbar();
+            if (canvas) canvas.style.cursor = 'crosshair';
+        }
+        if ((state.mode === 'multi' || temporaryShiftSelection) && !(state.selectedTables.length && state.selectedTables.includes(clickedTable))) {
+            multiSelectionStart = { x, y };
+            state.multiSelectionRect = { x, y, width: 0, height: 0 };
+            state.isPanning = false;
+            state.isDragging = false;
+            draw();
+        } else if ((state.mode === 'select' || state.mode === 'multi') && state.selectedTables.length) {
+            const selectedTable = findTableAt(x, y);
+            if (selectedTable && state.selectedTables.includes(selectedTable)) {
+                state.selectedTable = selectedTable;
+                pendingDragX = selectedTable.x;
+                pendingDragY = selectedTable.y;
+                groupDragOffsets = state.selectedTables.map(table => ({ table, x: table.x, y: table.y }));
+                dragHistorySnapshot = captureHistoryState();
+                state.isDragging = true;
+                state.dragOffsetX = x - selectedTable.x;
+                state.dragOffsetY = y - selectedTable.y;
+                state.isPanning = false;
+            }
+        } else if (state.mode === 'select') {
+            let found = false;
+            let selectedTable = null;
+            selectedTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            if (!selectedTable) {
+                selectedTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
+            }
+            if (!selectedTable) {
+                selectedTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
+            }
+            if (!selectedTable) {
+                selectedTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+            }
+            if (selectedTable) {
+                if (selectLockedGroup(selectedTable)) {
+                    draw();
+                    return;
+                }
+                state.selectedTables = [];
+                state.groupLocked = false;
+                state.selectedTable = selectedTable;
+                pendingDragX = selectedTable.x;
+                pendingDragY = selectedTable.y;
+                dragHistorySnapshot = captureHistoryState();
+                dragSnapTargets = state.tables
+                    .filter(table => table !== selectedTable)
+                    .map(table => ({ x: table.x, y: table.y }));
+                state.isDragging = true;
+                state.dragOffsetX = x - selectedTable.x;
+                state.dragOffsetY = y - selectedTable.y;
+                selectTable(selectedTable, false);
+                found = true;
+                state.isPanning = false;
+            } else {
+                state.selectedTables = [];
+                state.groupLocked = false;
+                selectTable(null);
+                state.isPanning = true;
+                state.panLastX = e.clientX;
+                state.panLastY = e.clientY;
+            }
+            draw();
+        } else if (state.mode === 'delete') {
+            let tableToDelete = null;
+            tableToDelete = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            if (!tableToDelete) {
+                tableToDelete = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
+            }
+            if (!tableToDelete) {
+                tableToDelete = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
+            }
+            if (!tableToDelete) {
+                tableToDelete = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+            }
+            if (tableToDelete) {
+                recordHistory();
+                const index = state.tables.indexOf(tableToDelete);
+                state.tables.splice(index, 1);
+                draw();
+            }
+        }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (multiSelectionStart) {
+            const { x, y } = getCanvasCoords(e);
+            state.multiSelectionRect = {
+                x: Math.min(multiSelectionStart.x, x),
+                y: Math.min(multiSelectionStart.y, y),
+                width: Math.abs(x - multiSelectionStart.x),
+                height: Math.abs(y - multiSelectionStart.y)
+            };
+            draw();
+        } else if (state.isDragging && state.selectedTable) {
+            const { x, y } = getCanvasCoords(e);
+            let newX = x - state.dragOffsetX;
+            let newY = y - state.dragOffsetY;
+            scheduleDragUpdate(newX, newY);
+        } else if (state.isPanning) {
+            const deltaX = e.clientX - state.panLastX;
+            const deltaY = e.clientY - state.panLastY;
+            state.canvasOffsetX += deltaX;
+            state.canvasOffsetY += deltaY;
             state.panLastX = e.clientX;
             state.panLastY = e.clientY;
-        }
-        draw();
-    } else if (state.mode === 'delete') {
-        // Aplicar mesma prioridade de seleção para deletar
-        let tableToDelete = null;
-        
-        // 1. Procura etiquetas primeiro (prioridade)
-        tableToDelete = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
-        
-        // 2. Se não encontrou etiqueta, procura assentos
-        if (!tableToDelete) {
-            tableToDelete = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
-        }
-        
-        // 3. Se não encontrou assento, procura mesas
-        if (!tableToDelete) {
-            tableToDelete = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
-        }
-        
-        // 4. Se não encontrou mesa, procura áreas customizadas
-        if (!tableToDelete) {
-            tableToDelete = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
-        }
-        
-        if (tableToDelete) {
-            const index = state.tables.indexOf(tableToDelete);
-            state.tables.splice(index, 1);
             draw();
+        } else {
+            const { x, y } = getCanvasCoords(e);
+            let hoveredTable = null;
+            hoveredTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            if (!hoveredTable) {
+                hoveredTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
+            }
+            if (!hoveredTable) {
+                hoveredTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
+            }
+            if (!hoveredTable) {
+                hoveredTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+            }
+            if (state.hoveredTable !== hoveredTable) {
+                state.hoveredTable = hoveredTable;
+                draw();
+            }
         }
-    }
-});
+    });
 
-canvas.addEventListener('mousemove', (e) => {
-    if (state.isDragging && state.selectedTable) {
-        const { x, y } = getCanvasCoords(e);
-        let newX = x - state.dragOffsetX;
-        let newY = y - state.dragOffsetY;
+    canvas.addEventListener('mouseup', () => {
+        if (multiSelectionStart) {
+            if (state.multiSelectionRect.width > 4 && state.multiSelectionRect.height > 4) {
+                selectTablesInRect(state.multiSelectionRect);
+                state.groupLocked = false;
+            }
+            multiSelectionStart = null;
+            state.multiSelectionRect = null;
+            temporaryShiftSelection = false;
+            draw();
+            return;
+        }
+        flushPendingDrag();
+        if (dragHistorySnapshot && dragHistorySnapshot !== captureHistoryState()) {
+            recordHistory(dragHistorySnapshot);
+        }
+        dragHistorySnapshot = null;
+        state.isDragging = false;
+        groupDragOffsets = [];
+        state.isPanning = false;
         state.alignmentLine = null;
-
-        for (let table of state.tables) {
-            if (table === state.selectedTable) continue;
-            if (Math.abs(newX - table.x) <= 5) {
-                newX = table.x;
-                state.alignmentLine = { x1: newX, y1: Math.min(newY, table.y), x2: newX, y2: Math.max(newY, table.y) };
-                break;
-            }
-            if (Math.abs(newY - table.y) <= 5) {
-                newY = table.y;
-                state.alignmentLine = { x1: Math.min(newX, table.x), y1: newY, x2: Math.max(newX, table.x), y2: newY };
-                break;
-            }
+        if (state.selectedTable && posXInput && posYInput) {
+            posXInput.value = Math.round(state.selectedTable.x);
+            posYInput.value = Math.round(state.selectedTable.y);
         }
-
-        state.selectedTable.x = newX;
-        state.selectedTable.y = newY;
+        if (state.selectedTables.length) {
+            updateMultiToolbarPosition();
+        } else if (state.selectedTable && state.mode === 'select') {
+            updateObjectToolbarPosition();
+        }
         draw();
-    } else if (state.isPanning) {
-        const deltaX = e.clientX - state.panLastX;
-        const deltaY = e.clientY - state.panLastY;
-        state.canvasOffsetX += deltaX;
-        state.canvasOffsetY += deltaY;
-        state.panLastX = e.clientX;
-        state.panLastY = e.clientY;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        multiSelectionStart = null;
+        state.multiSelectionRect = null;
+        temporaryShiftSelection = false;
+        flushPendingDrag();
+        if (dragHistorySnapshot && dragHistorySnapshot !== captureHistoryState()) {
+            recordHistory(dragHistorySnapshot);
+        }
+        dragHistorySnapshot = null;
+        state.isDragging = false;
+        groupDragOffsets = [];
+        state.isPanning = false;
+        state.alignmentLine = null;
+        state.hoveredTable = null;
         draw();
-    } else {
-        // Detectar hover com prioridade: assentos → mesas → áreas customizadas → etiquetas
-        const { x, y } = getCanvasCoords(e);
-        let hoveredTable = null;
-        
-        // 1. Procura etiquetas primeiro (prioridade)
-        hoveredTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
-        
-        // 2. Se não encontrou etiqueta, procura assentos
-        if (!hoveredTable) {
-            hoveredTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
-        }
-        
-        // 3. Se não encontrou assento, procura mesas
-        if (!hoveredTable) {
-            hoveredTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
-        }
-        
-        // 4. Se não encontrou mesa, procura áreas customizadas
-        if (!hoveredTable) {
-            hoveredTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
-        }
-        
-        // Se mudou o hover, redesenhar
-        if (state.hoveredTable !== hoveredTable) {
-            state.hoveredTable = hoveredTable;
-            draw();
-        }
-    }
-});
-
-canvas.addEventListener('mouseup', () => {
-    state.isDragging = false;
-    state.isPanning = false;
-    state.alignmentLine = null;
-    draw();
-});
-
-canvas.addEventListener('mouseleave', () => {
-    state.isDragging = false;
-    state.isPanning = false;
-    state.alignmentLine = null;
-    state.hoveredTable = null;
-    draw();
-});
+    });
+}
 
 // Zoom via roda do mouse: sincroniza com o slider e centraliza no cursor
 function handleCanvasWheel(e) {
     e.preventDefault();
     const step = 5; // percent per wheel step
-    const min = parseInt(zoomRange.min, 10);
-    const max = parseInt(zoomRange.max, 10);
-    const current = parseInt(zoomRange.value, 10);
     const deltaSign = Math.sign(e.deltaY); // positive => scroll down (zoom out)
-    let newValue = current - deltaSign * step;
-    newValue = Math.max(min, Math.min(max, newValue));
-
-    const beforeScale = state.canvasScale;
-    const afterScale = newValue / 100;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left - state.canvasOffsetX) / beforeScale;
-    const y = (e.clientY - rect.top - state.canvasOffsetY) / beforeScale;
-
-    // Ajusta offset para que o ponto sob o cursor permaneça no mesmo lugar
-    state.canvasOffsetX -= (afterScale - beforeScale) * x;
-    state.canvasOffsetY -= (afterScale - beforeScale) * y;
-
-    zoomRange.value = newValue;
-    zoomRange.dispatchEvent(new Event('input'));
+    const newValue = zoomPercent - deltaSign * ZOOM_STEP;
+    applyZoomPercent(newValue, e.clientX, e.clientY);
 }
 
-canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
+if (canvas) canvas.addEventListener('wheel', handleCanvasWheel, { passive: false });
 
-toggleDrawerBtn.addEventListener('click', () => {
+if (toggleDrawerBtn) toggleDrawerBtn.addEventListener('click', () => {
     drawer.classList.toggle('open');
 });
 
-selectModeBtn.addEventListener('click', () => {
+if (selectModeBtn) selectModeBtn.addEventListener('click', () => {
     state.mode = 'select';
-    canvas.style.cursor = 'crosshair';
+    state.selectedTables = [];
+    state.groupLocked = false;
+    floatingDeleteBtn.style.display = '';
+    updateFloatingLockIcon();
+    hideObjectToolbar();
+    if (canvas) canvas.style.cursor = 'crosshair';
 });
 
-deleteModeBtn.addEventListener('click', () => {
+if (multiSelectModeBtn) multiSelectModeBtn.addEventListener('click', () => {
+    state.mode = 'multi';
+    state.selectedTable = null;
+    sidebar.classList.remove('show');
+    floatingDeleteBtn.style.display = 'none';
+    updateFloatingLockIcon();
+    if (canvas) canvas.style.cursor = 'crosshair';
+    draw();
+});
+
+if (deleteModeBtn) deleteModeBtn.addEventListener('click', () => {
     state.mode = 'delete';
-    canvas.style.cursor = 'pointer';
+    state.selectedTables = [];
+    state.groupLocked = false;
+    hideObjectToolbar();
+    floatingDeleteBtn.style.display = '';
+    updateFloatingLockIcon();
+    if (canvas) canvas.style.cursor = 'pointer';
 });
 
-zoomRange.addEventListener('input', () => {
-    state.canvasScale = zoomRange.value / 100;
-    zoomValue.textContent = `${zoomRange.value}%`;
+function getTableBounds(table) {
+    const halfWidth = table.width ? table.width / 2 : (table.radius || 0);
+    const halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+    const angle = (table.angle || 0) * Math.PI / 180;
+    const rotatedWidth = Math.abs(Math.cos(angle) * halfWidth) + Math.abs(Math.sin(angle) * halfHeight);
+    const rotatedHeight = Math.abs(Math.sin(angle) * halfWidth) + Math.abs(Math.cos(angle) * halfHeight);
+    return { left: table.x - rotatedWidth, right: table.x + rotatedWidth, top: table.y - rotatedHeight, bottom: table.y + rotatedHeight };
+}
+
+function findTableAt(x, y) {
+    return [...state.tables].reverse().find(table => table.isPointInside(x, y));
+}
+
+function updateMultiToolbarPosition() {
+    if (!objectToolbar || !state.selectedTables.length) return;
+    floatingDeleteBtn.style.display = 'none';
+    floatingLockBtn.style.display = '';
+    updateFloatingLockIcon();
+    const rect = canvas.getBoundingClientRect();
+    const center = state.selectedTables.reduce((sum, table) => ({ x: sum.x + table.x, y: sum.y + table.y }), { x: 0, y: 0 });
+    center.x /= state.selectedTables.length;
+    center.y /= state.selectedTables.length;
+    objectToolbar.style.left = `${rect.left + state.canvasOffsetX + center.x * state.canvasScale}px`;
+    objectToolbar.style.top = `${Math.max(66, rect.top + state.canvasOffsetY + center.y * state.canvasScale - 80)}px`;
+    objectToolbar.classList.add('show');
+}
+
+function clearMultiSelection() {
+    state.selectedTables = [];
+    state.groupLocked = false;
+    if (state.mode === 'multi') hideObjectToolbar();
+}
+
+function selectTablesInRect(rect) {
+    state.selectedTables = state.tables.filter(table => {
+        const bounds = getTableBounds(table);
+        return bounds.left >= rect.x && bounds.right <= rect.x + rect.width && bounds.top >= rect.y && bounds.bottom <= rect.y + rect.height;
+    });
+    state.selectedTable = null;
+    sidebar.classList.remove('show');
+    if (state.selectedTables.length) updateMultiToolbarPosition();
+}
+
+function cloneTable(table, x, y, name = table.name) {
+    return new table.constructor(table.type, x, y, table.width, table.height, table.radius, table.angle, table.color, name, table.seats, table.nameColor, table.cornerSeats, table.seatColor, table.counterEnabled, table.fontSize, table.isHalfCircle);
+}
+
+function serializeGroup(tables) {
+    const center = tables.reduce((sum, table) => ({ x: sum.x + table.x, y: sum.y + table.y }), { x: 0, y: 0 });
+    center.x /= tables.length;
+    center.y /= tables.length;
+    return {
+        type: 'group',
+        x: center.x,
+        y: center.y,
+        items: tables.map(table => ({ ...serializeTableItem(table), x: table.x - center.x, y: table.y - center.y }))
+    };
+}
+
+function createTablesFromSavedGroup(itemData) {
+    const group = typeof itemData.item === 'string' ? JSON.parse(itemData.item) : itemData.item;
+    const center = getWindowCenterCanvasCoords();
+    const groupId = `saved-group-${nextGroupId++}`;
+    return group.items.map(item => {
+        const table = new Table(item.type, center.x + item.x, center.y + item.y, item.width, item.height, item.radius, item.angle, item.color, item.name, item.seats, item.nameColor, item.cornerSeats, item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle);
+        table.groupId = groupId;
+        return table;
+    });
+}
+
+function duplicateSelectedGroup() {
+    if (!state.selectedTables.length) return;
+    recordHistory();
+    const copies = state.selectedTables.map(table => cloneTable(table, table.x + 50, table.y + 50, table.name));
+    const groupId = `group-${nextGroupId++}`;
+    copies.forEach(table => { table.groupId = groupId; });
+    state.tables.push(...copies);
+    state.selectedTables = copies;
+    state.selectedTable = null;
+    updateMultiToolbarPosition();
+    draw();
+}
+
+function rotateSelectedGroup(step) {
+    if (!state.selectedTables.length) return;
+    recordHistory();
+    if (!state.groupLocked) {
+        state.selectedTables.forEach(table => { table.angle = Math.max(-180, Math.min(180, table.angle + step)); });
+    } else {
+        const center = state.selectedTables.reduce((sum, table) => ({
+            x: sum.x + table.x,
+            y: sum.y + table.y
+        }), { x: 0, y: 0 });
+        center.x /= state.selectedTables.length;
+        center.y /= state.selectedTables.length;
+
+        const pivot = state.selectedTables.reduce((closest, table) => {
+            const tableDistance = Math.hypot(table.x - center.x, table.y - center.y);
+            const closestDistance = Math.hypot(closest.x - center.x, closest.y - center.y);
+            return tableDistance < closestDistance ? table : closest;
+        });
+        const rotation = step * Math.PI / 180;
+        const cosine = Math.cos(rotation);
+        const sine = Math.sin(rotation);
+
+        state.selectedTables.forEach(table => {
+            const relativeX = table.x - pivot.x;
+            const relativeY = table.y - pivot.y;
+            table.x = pivot.x + relativeX * cosine - relativeY * sine;
+            table.y = pivot.y + relativeX * sine + relativeY * cosine;
+            table.angle = Math.max(-180, Math.min(180, table.angle + step));
+        });
+    }
+    updateMultiToolbarPosition();
+    draw();
+}
+
+function selectLockedGroup(table) {
+    if (!table?.groupId) return false;
+    const group = state.tables.filter(candidate => candidate.groupId === table.groupId);
+    if (!group.length) return false;
+    state.selectedTables = group;
+    state.selectedTable = null;
+    state.groupLocked = true;
+    updateFloatingLockIcon();
+    sidebar.classList.remove('show');
+    updateMultiToolbarPosition();
+    return true;
+}
+
+async function saveSelectedGroup() {
+    if (!state.selectedTables.length) return;
+    if (!state.currentUser) { showAuthModal(); return; }
+    groupToSave = state.selectedTables.slice();
+    showSavedItemModal(null, 'Meu agrupamento', true);
+}
+
+// Zoom buttons handlers
+function zoomFromCenter(direction) {
+    const rect = canvas.getBoundingClientRect();
+    applyZoomPercent(zoomPercent + direction * ZOOM_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+if (zoomInBtn) zoomInBtn.addEventListener('click', () => zoomFromCenter(1));
+if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => zoomFromCenter(-1));
+if (menuZoomInBtn) menuZoomInBtn.addEventListener('click', () => zoomFromCenter(1));
+if (menuZoomOutBtn) menuZoomOutBtn.addEventListener('click', () => zoomFromCenter(-1));
+if (showGridBtn) showGridBtn.addEventListener('click', () => {
+    state.showGrid = !state.showGrid;
+    showGridBtn.textContent = state.showGrid ? 'Ocultar grade' : 'Mostrar grade';
+    draw();
+});
+if (showMeasuresBtn) showMeasuresBtn.addEventListener('click', () => {
+    state.showMeasures = !state.showMeasures;
+    showMeasuresBtn.textContent = state.showMeasures ? 'Ocultar medidas' : 'Mostrar medidas';
     draw();
 });
 
 function setInitialZoom() {
-    state.canvasScale = zoomRange.value / 100;
-    zoomValue.textContent = `${zoomRange.value}%`;
+    zoomPercent = 100;
+    state.canvasScale = zoomPercent * 0.004;
 }
 setInitialZoom();
+// Ensure zoom controls are positioned correctly on load and resize
+updateZoomControlsPosition();
+window.addEventListener('resize', updateZoomControlsPosition);
+window.addEventListener('resize', updateObjectToolbarPosition);
 
 function getWindowCenterCanvasCoords() {
     const rect = canvas.getBoundingClientRect();
@@ -511,8 +1348,9 @@ function getWindowCenterCanvasCoords() {
     };
 }
 
-deleteAllBtn.addEventListener('click', () => {
+if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => {
     if (confirm('Tem certeza que deseja excluir todas as mesas?')) {
+        if (state.tables.length) recordHistory();
         state.tables = [];
         state.nextTableNumber = 1;
         state.selectedTable = null;
@@ -521,27 +1359,198 @@ deleteAllBtn.addEventListener('click', () => {
     }
 });
 
-fileMenuBtn.addEventListener('click', openFileMenu);
-saveJsonBtn.addEventListener('click', downloadJson);
-loadJsonBtn.addEventListener('click', () => fileInput.click());
-downloadPngBtn.addEventListener('click', downloadCanvasPng);
-closeFileMenuBtn.addEventListener('click', closeFileMenu);
-fileInput.addEventListener('change', handleFileInputChange);
-fileMenuOverlay.addEventListener('click', (e) => {
+// Ao salvar localmente, abrir modal para nome
+if (saveJsonBtn) {
+    saveJsonBtn.addEventListener('click', (e) => {
+        saveMode = 'local';
+        pendingRenameMapId = null;
+        showCloudModal(true);
+    });
+}
+// Salvar na nuvem: abrir modal em modo cloud
+if (saveCloudBtn) {
+    saveCloudBtn.addEventListener('click', (e) => {
+        saveMode = 'cloud';
+        pendingRenameMapId = null;
+        mapNameInput.value = toolbarMapName.value || 'Novo Mapeamento';
+        showCloudModal(true);
+    });
+}
+// Salvar como novo a partir da toolbar
+if (saveAsNewBtn) {
+    saveAsNewBtn.addEventListener('click', (e) => {
+        saveMode = 'cloud-new';
+        pendingRenameMapId = null;
+        mapNameInput.value = toolbarMapName.value || 'Novo Mapeamento';
+        showCloudModal(true);
+    });
+}
+if (loadJsonBtn) loadJsonBtn.addEventListener('click', () => fileInput && fileInput.click());
+if (downloadPngBtn) downloadPngBtn.addEventListener('click', downloadCanvasPng);
+if (closeFileMenuBtn) closeFileMenuBtn.addEventListener('click', closeFileMenu);
+if (fileInput) fileInput.addEventListener('change', handleFileInputChange);
+if (fileMenuOverlay) fileMenuOverlay.addEventListener('click', (e) => {
     if (e.target === fileMenuOverlay) {
         closeFileMenu();
     }
 });
 
+// Toolbar file actions
+if (newMapBtn) newMapBtn.addEventListener('click', () => {
+    const wantToSave = confirm('Deseja salvar o mapa atual antes de criar um novo? OK = Salvar, Cancel = Não salvar');
+    if (wantToSave) {
+        pendingNewAfterSave = true;
+        saveMode = 'cloud';
+        showCloudModal(true);
+    } else {
+        if (confirm('Tem certeza que deseja criar um novo mapa? Isso apagará o atual.')) {
+            state.tables = [];
+            state.nextTableNumber = 1;
+            state.selectedTable = null;
+            state.currentCloudMapId = null;
+            sidebar.classList.remove('show');
+            if (toolbarMapName) toolbarMapName.value = 'Novo mapa';
+            clearHistory();
+            draw();
+        }
+    }
+});
+
+if (openMapBtn) openMapBtn.addEventListener('click', () => showCloudModal(false));
+if (saveBtn) saveBtn.addEventListener('click', () => { saveMode = 'cloud'; showCloudModal(true); });
+if (saveAsBtn) saveAsBtn.addEventListener('click', () => { saveMode = 'cloud-new'; showCloudModal(true); });
+if (importBtn) importBtn.addEventListener('click', () => fileInput.click());
+if (exportPngBtn) exportPngBtn.addEventListener('click', downloadCanvasPng);
+if (exportJpgBtn) exportJpgBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
+    const safe = base.replace(/[<>:\\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
+    link.download = `${safe}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+});
+if (exportJsonBtn) exportJsonBtn.addEventListener('click', () => {
+    downloadJson();
+});
+
+// Handle export submenu (prevent parent dropdown from closing)
+const exportMenuBtnEl = document.getElementById('exportMenuBtn');
+if (exportMenuBtnEl) {
+    const submenu = exportMenuBtnEl.nextElementSibling;
+    exportMenuBtnEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        // close other open submenus
+        document.querySelectorAll('.dropdown-menu .dropdown-menu.show').forEach(m => m.classList.remove('show'));
+        if (submenu) submenu.classList.toggle('show');
+    });
+    const parentDropdown = exportMenuBtnEl.closest('.dropdown');
+    if (parentDropdown) parentDropdown.addEventListener('hide.bs.dropdown', () => {
+        if (submenu) submenu.classList.remove('show');
+    });
+    // close submenu when clicking elsewhere
+    document.addEventListener('click', () => {
+        if (submenu) submenu.classList.remove('show');
+    });
+}
+
+if (undoBtn) undoBtn.addEventListener('click', undo);
+if (redoBtn) redoBtn.addEventListener('click', redo);
+document.addEventListener('keydown', (event) => {
+    if (!event.ctrlKey || event.altKey) return;
+    if (event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        undo();
+    } else if (event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        redo();
+    }
+});
+updateHistoryButtons();
+
 nameInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.name = nameInput.value;
         draw();
     }
 });
 
+posXInput.addEventListener('input', () => {
+    if (state.selectedTable) {
+        recordHistory();
+        state.selectedTable.x = Number(posXInput.value) || 0;
+        draw();
+    }
+});
+
+posYInput.addEventListener('input', () => {
+    if (state.selectedTable) {
+        recordHistory();
+        state.selectedTable.y = Number(posYInput.value) || 0;
+        draw();
+    }
+});
+
+function clampNumberInput(input, value) {
+    const min = input.min === '' ? -Infinity : Number(input.min);
+    const max = input.max === '' ? Infinity : Number(input.max);
+    return Math.max(min, Math.min(max, value));
+}
+
+document.querySelectorAll('[data-step-target]').forEach(button => {
+    button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.stepTarget);
+        if (!input) return;
+        const current = Number(input.value) || 0;
+        input.value = clampNumberInput(input, current + Number(button.dataset.step));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+});
+
+function updateColorHex(inputId, hexId) {
+    const input = document.getElementById(inputId);
+    const hexInput = document.getElementById(hexId);
+    if (!input || !hexInput) return;
+    hexInput.value = input.value.toUpperCase();
+}
+
+function bindHexColorInput(inputId, hexId) {
+    const input = document.getElementById(inputId);
+    const hexInput = document.getElementById(hexId);
+    if (!input || !hexInput) return;
+    hexInput.addEventListener('change', () => {
+        const value = hexInput.value.trim();
+        if (/^#[0-9a-f]{6}$/i.test(value)) {
+            input.value = value;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            updateColorHex(inputId, hexId);
+        }
+    });
+}
+
+bindHexColorInput('color', 'colorHex');
+bindHexColorInput('nameColor', 'nameColorHex');
+bindHexColorInput('seatColor', 'seatColorHex');
+
+document.querySelectorAll('.color-swatches').forEach(group => {
+    const targetId = group.dataset.colorTarget;
+    group.querySelectorAll('[data-color]').forEach(swatch => {
+        swatch.style.setProperty('--swatch-color', swatch.dataset.color);
+        swatch.addEventListener('click', () => {
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            input.value = swatch.dataset.color;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            updateColorHex(targetId, `${targetId}Hex`);
+        });
+    });
+});
+
 fontSizeInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.fontSize = parseInt(fontSizeInput.value, 10);
         draw();
     }
@@ -549,6 +1558,7 @@ fontSizeInput.addEventListener('input', () => {
 
 widthInput.addEventListener('input', () => {
     if (state.selectedTable && (state.selectedTable.type === 'square' || state.selectedTable.type === 'seat' || state.selectedTable.type === 'customArea')) {
+        recordHistory();
         state.selectedTable.width = parseInt(widthInput.value, 10);
         updateMaxSeats(state.selectedTable);
         updateSeatWarning(state.selectedTable);
@@ -558,6 +1568,7 @@ widthInput.addEventListener('input', () => {
 
 heightInput.addEventListener('input', () => {
     if (state.selectedTable && (state.selectedTable.type === 'square' || state.selectedTable.type === 'seat' || state.selectedTable.type === 'customArea')) {
+        recordHistory();
         state.selectedTable.height = parseInt(heightInput.value, 10);
         updateMaxSeats(state.selectedTable);
         updateSeatWarning(state.selectedTable);
@@ -567,6 +1578,7 @@ heightInput.addEventListener('input', () => {
 
 radiusInput.addEventListener('input', () => {
     if (state.selectedTable && (state.selectedTable.type === 'round' || state.selectedTable.type === 'roundSeat' || state.selectedTable.type === 'customCircleArea')) {
+        recordHistory();
         state.selectedTable.radius = parseInt(radiusInput.value, 10);
         updateMaxSeats(state.selectedTable);
         draw();
@@ -575,6 +1587,7 @@ radiusInput.addEventListener('input', () => {
 
 halfCircleInput.addEventListener('change', () => {
     if (state.selectedTable && state.selectedTable.type === 'customCircleArea') {
+        recordHistory();
         state.selectedTable.isHalfCircle = halfCircleInput.checked;
         draw();
     }
@@ -582,6 +1595,7 @@ halfCircleInput.addEventListener('change', () => {
 
 angleInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.angle = parseInt(angleInput.value, 10);
         angleNumberInput.value = angleInput.value;
         draw();
@@ -592,8 +1606,9 @@ angleNumberInput.addEventListener('input', () => {
     if (state.selectedTable) {
         let value = parseInt(angleNumberInput.value, 10);
         if (isNaN(value)) value = 0;
-        if (value < 0) value = 0;
-        if (value > 360) value = 360;
+        if (value < -180) value = -180;
+        if (value > 180) value = 180;
+        recordHistory();
         state.selectedTable.angle = value;
         angleInput.value = value;
         angleNumberInput.value = value;
@@ -603,27 +1618,34 @@ angleNumberInput.addEventListener('input', () => {
 
 colorInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.color = colorInput.value;
+        updateColorHex('color', 'colorHex');
         draw();
     }
 });
 
 nameColorInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.nameColor = nameColorInput.value;
+        updateColorHex('nameColor', 'nameColorHex');
         draw();
     }
 });
 
 seatColorInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.seatColor = seatColorInput.value;
+        updateColorHex('seatColor', 'seatColorHex');
         draw();
     }
 });
 
 counterEnabledInput.addEventListener('change', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.counterEnabled = counterEnabledInput.checked;
         draw();
     }
@@ -631,6 +1653,7 @@ counterEnabledInput.addEventListener('change', () => {
 
 seatsInput.addEventListener('input', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.seats = parseInt(seatsInput.value, 10);
         updateSeatWarning(state.selectedTable);
         draw();
@@ -639,6 +1662,7 @@ seatsInput.addEventListener('input', () => {
 
 cornerSeatsInput.addEventListener('change', () => {
     if (state.selectedTable) {
+        recordHistory();
         state.selectedTable.cornerSeats = cornerSeatsInput.checked;
         updateMaxSeats(state.selectedTable);
         updateSeatWarning(state.selectedTable);
@@ -651,6 +1675,7 @@ duplicateBtn.addEventListener('click', () => {
         return;
     }
 
+    recordHistory();
     const shouldKeepName = ['seat', 'roundSeat', 'customArea', 'customCircleArea', 'label'].includes(state.selectedTable.type);
     const newName = shouldKeepName ? state.selectedTable.name : String(state.nextTableNumber++);
 
@@ -678,11 +1703,12 @@ duplicateBtn.addEventListener('click', () => {
     draw();
 });
 
-deleteBtn.addEventListener('click', () => {
+if (deleteBtn) deleteBtn.addEventListener('click', () => {
     if (!state.selectedTable) {
         return;
     }
 
+    recordHistory();
     const index = state.tables.indexOf(state.selectedTable);
     if (index > -1) {
         state.tables.splice(index, 1);
@@ -691,57 +1717,115 @@ deleteBtn.addEventListener('click', () => {
     draw();
 });
 
-addSquareBtn.addEventListener('click', () => {
+function rotateSelectedTable(step) {
+    if (!state.selectedTable) return;
+    recordHistory();
+    const nextAngle = Math.max(-180, Math.min(180, state.selectedTable.angle + step));
+    state.selectedTable.angle = nextAngle;
+    angleInput.value = nextAngle;
+    angleNumberInput.value = nextAngle;
+    updateObjectToolbarPosition();
+    draw();
+}
+
+if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => state.selectedTables.length ? rotateSelectedGroup(-45) : rotateSelectedTable(-45));
+if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => state.selectedTables.length ? rotateSelectedGroup(45) : rotateSelectedTable(45));
+if (floatingDuplicateBtn) floatingDuplicateBtn.addEventListener('click', () => state.selectedTables.length ? duplicateSelectedGroup() : duplicateBtn && duplicateBtn.click());
+if (floatingSaveBtn) floatingSaveBtn.addEventListener('click', () => state.selectedTables.length ? saveSelectedGroup() : saveSelectedItem());
+if (floatingLockBtn) floatingLockBtn.addEventListener('click', () => {
+    if (!state.selectedTables.length) return;
+    state.groupLocked = !state.groupLocked;
+    if (state.groupLocked) {
+        const groupId = `group-${nextGroupId++}`;
+        state.selectedTables.forEach(table => { table.groupId = groupId; });
+    } else {
+        state.selectedTables.forEach(table => { delete table.groupId; });
+    }
+    updateFloatingLockIcon();
+});
+if (floatingDeleteBtn) floatingDeleteBtn.addEventListener('click', () => deleteBtn && deleteBtn.click());
+if (saveItemBtn) saveItemBtn.addEventListener('click', saveSelectedItem);
+if (closeSavedItemModal) closeSavedItemModal.addEventListener('click', hideSavedItemModal);
+if (cancelSavedItemBtn) cancelSavedItemBtn.addEventListener('click', hideSavedItemModal);
+if (saveSavedItemBtn) saveSavedItemBtn.addEventListener('click', saveEditedItemName);
+if (deleteSavedItemBtn) deleteSavedItemBtn.addEventListener('click', deleteSelectedSavedItem);
+if (savedItemModal) savedItemModal.addEventListener('click', event => {
+    if (event.target === savedItemModal) hideSavedItemModal();
+});
+
+[rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingLockBtn, floatingDeleteBtn, saveItemBtn].forEach(button => {
+    if (button) button.addEventListener('mousedown', event => event.stopPropagation());
+});
+
+document.addEventListener('mousedown', event => {
+    if (objectToolbar && !objectToolbar.contains(event.target)) {
+        hideObjectToolbar();
+    }
+    if (state.selectedTables.length && !canvas.contains(event.target)) {
+        state.selectedTables = [];
+        state.selectedTable = null;
+        state.groupLocked = false;
+        state.mode = 'select';
+        if (canvas) canvas.style.cursor = 'crosshair';
+    }
+});
+
+if (addSquareBtn) addSquareBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
     const table = new Table('square', x, y, 150, 150, 0, 0, '#a3a3a3', String(state.nextTableNumber++), 8, '#000000', true, '#e7e7e7');
     state.tables.push(table);
     selectTable(table);
     draw();
 });
-
-addRoundBtn.addEventListener('click', () => {
+if (addRoundBtn) addRoundBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
     const table = new Table('round', x, y, 0, 0, 60, 0, '#a3a3a3', String(state.nextTableNumber++), 8, '#000000', true, '#e7e7e7');
     state.tables.push(table);
     selectTable(table);
     draw();
 });
-
-addSeatBtn.addEventListener('click', () => {
+if (addSeatBtn) addSeatBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
     const seat = new Table('seat', x, y, 40, 40, 0, 0, '#e7e7e7', '', 1, '#000000', false, '#e7e7e7');
     state.tables.push(seat);
     selectTable(seat);
     draw();
 });
 
-addRoundSeatBtn.addEventListener('click', () => {
+if (addRoundSeatBtn) addRoundSeatBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
     const roundSeat = new Table('roundSeat', x, y, 0, 0, 20, 0, '#e7e7e7', '', 1, '#000000', false, '#e7e7e7');
     state.tables.push(roundSeat);
     selectTable(roundSeat);
     draw();
 });
 
-addCustomAreaBtn.addEventListener('click', () => {
+if (addCustomAreaBtn) addCustomAreaBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
-    const customArea = new Table('customArea', x, y, 300, 300, 0, 0, '#8B4513', 'Área Customizada', 0, '#000000', false, '#e7e7e7', false, 24);
+    recordHistory();
+    const customArea = new Table('customArea', x, y, 300, 300, 0, 0, '#8B4513', 'Área Customizada', 0, '#000000', false, '#e7e7e7', false, 54);
     state.tables.push(customArea);
     selectTable(customArea);
     draw();
 });
 
-addCustomCircleAreaBtn.addEventListener('click', () => {
+if (addCustomCircleAreaBtn) addCustomCircleAreaBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
-    const customCircleArea = new Table('customCircleArea', x, y, 0, 0, 150, 0, '#8B4513', 'Área Circular Customizada', 0, '#000000', false, '#e7e7e7', false, 24, false);
+    recordHistory();
+    const customCircleArea = new Table('customCircleArea', x, y, 0, 0, 150, 0, '#8B4513', 'Área Circular Customizada', 0, '#000000', false, '#e7e7e7', false, 54, false);
     state.tables.push(customCircleArea);
     selectTable(customCircleArea);
     draw();
 });
 
-addLabelBtn.addEventListener('click', () => {
+if (addLabelBtn) addLabelBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
-    const label = new Table('label', x, y, 0, 0, 0, 0, '#000000', 'Etiqueta', 0, '#000000', false, '#e7e7e7', false, 24);
+    recordHistory();
+    const label = new Table('label', x, y, 0, 0, 0, 0, '#000000', 'Etiqueta', 0, '#000000', false, '#e7e7e7', false, 54);
     state.tables.push(label);
     selectTable(label);
     draw();
@@ -758,28 +1842,33 @@ seatCounter.addEventListener('mouseover', (e) => {
         Assentos Redondos (habilitados): ${details.roundSeatEnabledCount}<br>
         Assentos Redondos (desabilitados): ${details.roundSeatDisabledCount}
     `;
+    // Posicionar o popover abaixo do contador
     const rect = seatCounter.getBoundingClientRect();
     tooltip.style.left = `${rect.left}px`;
     tooltip.style.top = `${rect.bottom + 5}px`;
     tooltip.style.display = 'block';
 });
 
-seatCounter.addEventListener('mouseout', () => {
+if (seatCounter) seatCounter.addEventListener('mouseout', () => {
     tooltip.style.display = 'none';
 });
 
-loginBtn.addEventListener('click', showAuthModal);
-closeAuthModal.addEventListener('click', hideAuthModal);
-authModal.addEventListener('click', (e) => {
+// Esconder tooltip em scroll/resize para evitar artefatos
+window.addEventListener('scroll', () => { tooltip.style.display = 'none'; }, { passive: true });
+window.addEventListener('resize', () => { tooltip.style.display = 'none'; });
+
+if (loginBtn) loginBtn.addEventListener('click', showAuthModal);
+if (closeAuthModal) closeAuthModal.addEventListener('click', hideAuthModal);
+if (authModal) authModal.addEventListener('click', (e) => {
     if (e.target === authModal) {
         hideAuthModal();
     }
 });
 
-loginTab.addEventListener('click', switchToLogin);
-registerTab.addEventListener('click', switchToRegister);
+if (loginTab) loginTab.addEventListener('click', switchToLogin);
+if (registerTab) registerTab.addEventListener('click', switchToRegister);
 
-loginSubmit.addEventListener('click', async () => {
+if (loginSubmit) loginSubmit.addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     try {
@@ -790,7 +1879,8 @@ loginSubmit.addEventListener('click', async () => {
     }
 });
 
-registerSubmit.addEventListener('click', async () => {
+// Register handler
+if (registerSubmit) registerSubmit.addEventListener('click', async () => {
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
@@ -803,7 +1893,8 @@ registerSubmit.addEventListener('click', async () => {
     }
 });
 
-googleLogin.addEventListener('click', async () => {
+// Google login
+if (googleLogin) googleLogin.addEventListener('click', async () => {
     try {
         await loginWithGoogle();
         hideAuthModal();
@@ -812,20 +1903,16 @@ googleLogin.addEventListener('click', async () => {
     }
 });
 
-userDisplay.addEventListener('click', () => {
-    if (confirm('Deseja fazer logout?')) {
-        logoutUser();
-    }
-});
-
-logoutBtn.addEventListener('click', logoutUser);
-
-saveCloudBtn.addEventListener('click', () => showCloudModal(true));
-loadCloudBtn.addEventListener('click', () => showCloudModal(false));
-closeCloudModal.addEventListener('click', hideCloudModal);
-cloudModal.addEventListener('click', (e) => {
-    if (e.target === cloudModal) {
-        hideCloudModal();
+// Logout
+if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+    try {
+        // Atualizar UI imediatamente ANTES de fazer logout
+        updateUIForUser(null);
+        
+        await logoutUser();
+        hideAuthModal();
+    } catch (error) {
+        console.error(error);
     }
 });
 
@@ -833,13 +1920,60 @@ saveCloudSubmit.addEventListener('click', async () => {
     const name = mapNameInput.value.trim();
     if (!name) {
         cloudError.textContent = 'Nome do mapa é obrigatório.';
+        cloudError.style.display = 'block';
         return;
     }
     try {
-        await saveMapToCloud(name);
-        hideCloudModal();
-        alert('Mapa salvo com sucesso!');
+        if (saveMode === 'local') {
+            downloadJsonWithName(name);
+            // Atualiza toolbar com o nome salvo
+            toolbarMapName.value = name;
+            state.currentCloudMapId = null;
+            hideCloudModal();
+            await loadMapsList();
+            finishPendingNewIfRequested();
+            alert('Arquivo salvo no dispositivo.');
+        } else if (saveMode === 'rename' && pendingRenameMapId) {
+            await renameMapInCloud(pendingRenameMapId, name);
+            pendingRenameMapId = null;
+            saveMode = 'cloud';
+            // Se o mapa renomeado for o carregado atualmente, atualiza toolbar
+            if (state.currentCloudMapId) toolbarMapName.value = name;
+            hideCloudModal();
+            await loadMapsList();
+            alert('Mapa renomeado com sucesso!');
+        } else if (saveMode === 'cloud-new') {
+            // Força criação de novo mapa na nuvem
+            const newId = await saveMapToCloud(name, null);
+            state.currentCloudMapId = newId;
+            toolbarMapName.value = name;
+            hideCloudModal();
+            await loadMapsList();
+            finishPendingNewIfRequested();
+            alert('Mapa salvo como novo com sucesso!');
+        } else {
+            // default: salvar na nuvem — sobrescreve se o mapa atual foi carregado da nuvem
+            if (state.currentCloudMapId) {
+                await saveMapToCloud(name, state.currentCloudMapId);
+            } else {
+                const newId = await saveMapToCloud(name, null);
+                state.currentCloudMapId = newId;
+            }
+            toolbarMapName.value = name;
+            hideCloudModal();
+            await loadMapsList();
+            finishPendingNewIfRequested();
+            alert('Mapa salvo com sucesso!');
+        }
     } catch (error) {
         cloudError.textContent = 'Erro ao salvar mapa.';
+        cloudError.style.display = 'block';
+    }
+});
+loadCloudBtn.addEventListener('click', () => showCloudModal(false));
+closeCloudModal.addEventListener('click', hideCloudModal);
+cloudModal.addEventListener('click', (e) => {
+    if (e.target === cloudModal) {
+        hideCloudModal();
     }
 });

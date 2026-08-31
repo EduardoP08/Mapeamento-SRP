@@ -13,47 +13,71 @@
         <div class="container-fluid">
             <div class="d-flex align-items-center">
                 <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="toggleDrawer">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true">
-                        <rect x="2" y="3" width="12" height="1.5"></rect>
-                        <rect x="2" y="7" width="12" height="1.5"></rect>
-                        <rect x="2" y="11" width="12" height="1.5"></rect>
-                    </svg>
-                    <span class="d-none d-sm-inline">Menu</span>
-                </button>
-                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="selectMode">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
-                        <path d="M173.3 66.5C181.4 62.4 191.2 63.3 198.4 68.8L518.4 308.7C526.7 314.9 530 325.7 526.8 335.5C523.6 345.3 514.4 351.9 504 351.9L351.7 351.9L440.6 529.6C448.5 545.4 442.1 564.6 426.3 572.5C410.5 580.4 391.3 574 383.4 558.2L294.5 380.5L203.2 502.3C197 510.6 186.2 513.9 176.4 510.7C166.6 507.5 160 498.3 160 488L160 88C160 78.9 165.1 70.6 173.3 66.5z"/>
+                        <path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/>
                     </svg>
-                    <span class="d-none d-sm-inline">Selecionar</span>
+                    <span class="d-none d-sm-inline">Adicionar Item</span>
                 </button>
-                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="deleteMode">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
-                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
-                    </svg>
-                    <span class="d-none d-sm-inline">Excluir</span>
-                </button>
-                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="deleteAll">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1"  aria-hidden="true">
-                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
-                    </svg>
-                    <span class="d-none d-sm-inline">Excluir Tudo</span>
-                </button>
-
-                <div class="input-group input-group-sm me-3 align-items-center toolbar-zoom">
-                    <label class="input-group-text bg-secondary text-white" for="zoomRange">Zoom</label>
-                    <input id="zoomRange" type="range" min="25" max="150" value="100" class="form-range">
-                    <span id="zoomValue" class="badge bg-secondary ms-2">100%</span>
-                </div>
-
-                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="fileMenuBtn">
+                <!-- Removed Selecionar / Excluir / Excluir Tudo per request -->
+                <div class="dropdown me-2">
+                    <button class="btn btn-outline-light btn-sm d-flex align-items-center dropdown-toggle" id="fileDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
                         <path d="M304 112L192 112C183.2 112 176 119.2 176 128L176 512C176 520.8 183.2 528 192 528L448 528C456.8 528 464 520.8 464 512L464 272L376 272C336.2 272 304 239.8 304 200L304 112zM444.1 224L352 131.9L352 200C352 213.3 362.7 224 376 224L444.1 224zM128 128C128 92.7 156.7 64 192 64L325.5 64C342.5 64 358.8 70.7 370.8 82.7L493.3 205.3C505.3 217.3 512 233.6 512 250.6L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 128z"/>
                     </svg>
                     <span class="d-none d-sm-inline">Arquivo</span>
-                </button>
+                    </button>
+                    <ul class="dropdown-menu">
+                    <li><button class="dropdown-item" id="newMapBtn">Novo mapa</button></li>
+                    <li><button class="dropdown-item" id="openMapBtn">Meus mapas</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" id="saveBtn">Salvar</button></li>
+                    <li><button class="dropdown-item" id="saveAsBtn">Salvar como...</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item" id="importBtn">Importar</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="dropend">
+                        <button class="dropdown-item d-flex justify-content-between align-items-center" id="exportMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            Exportar
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" id="exportPngBtn">PNG</button></li>
+                            <li><button class="dropdown-item" id="exportJpgBtn">JPG</button></li>
+                            <li><button class="dropdown-item" id="exportJsonBtn">JSON</button></li>
+                        </ul>
+                    </li>
+                    </ul>
+                </div>
+                <div class="dropdown me-2">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" id="editBtn" data-bs-toggle="dropdown" aria-expanded="false">Editar</button>
+                    <ul class="dropdown-menu">
+                        <li><button class="dropdown-item" id="undoBtn"></i>Desfazer <span class="text-muted ms-2">Ctrl+Z</span></button></li>
+                        <li><button class="dropdown-item" id="redoBtn"></i>Refazer <span class="text-muted ms-2">Ctrl+Y</span></button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item" id="selectMode">Seleção</button></li>
+                        <li><button class="dropdown-item" id="multiSelectMode">Seleção múltipla <span class="text-muted ms-2">Shift + arrastar</span></button></li>
+                        <li><button class="dropdown-item" id="deleteMode">Excluir</button></li>
+                    </ul>
+                </div>
+                <div class="dropdown me-2">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" id="viewBtn" data-bs-toggle="dropdown" aria-expanded="false">Visualizar</button>
+                    <ul class="dropdown-menu">
+                        <li><button class="dropdown-item" id="showGrid">Mostrar grade</button></li>
+                        <li><button class="dropdown-item" id="showMeasures">Mostrar medidas</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item" id="menuZoomIn">Zoom <i class="fas fa-plus me-2"></i></button></li>
+                        <li><button class="dropdown-item" id="menuZoomOut">Zoom <i class="fas fa-minus me-2"></i></button></li>
+                    </ul>
+                </div>
+
+                <!-- removed legacy file menu button -->
+                <div class="input-group input-group-sm ms-2 me-2 flex-grow-1">
+                    <input type="text" id="toolbarMapName" class="form-control" value="Novo Mapa" placeholder="Nome do mapeamento">
+                </div>
+                <span id="seatCounter" class="text-white fw-bold me-3">Assentos: 0</span>
             </div>
             <div class="d-flex align-items-center ms-auto">
-                <span id="seatCounter" class="text-white fw-bold me-3">Assentos: 0</span>
+                
                 <div id="login">
                     <button class="btn btn-outline-light btn-sm" id="loginBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true">
@@ -62,9 +86,9 @@
                         </svg>
                         <span class="d-none d-sm-inline">Entrar</span>
                     </button>
-                    <span id="userDisplay" style="display: none;" class="ms-2 text-white">
+                    <span id="userDisplay" class="ms-2 text-white d-flex align-items-center">
                         <span id="userName"></span>
-                        <button class="btn btn-link btn-sm text-decoration-none text-white" d-flex" id="logoutBtn" style="margin-left: 10px;">
+                        <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="logoutBtn" style="margin-left: 10px;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
                                 <path d="M224 160C241.7 160 256 145.7 256 128C256 110.3 241.7 96 224 96L160 96C107 96 64 139 64 192L64 448C64 501 107 544 160 544L224 544C241.7 544 256 529.7 256 512C256 494.3 241.7 480 224 480L160 480C142.3 480 128 465.7 128 448L128 192C128 174.3 142.3 160 160 160L224 160zM566.6 342.6C579.1 330.1 579.1 309.8 566.6 297.3L438.6 169.3C426.1 156.8 405.8 156.8 393.3 169.3C380.8 181.8 380.8 202.1 393.3 214.6L466.7 288L256 288C238.3 288 224 302.3 224 320C224 337.7 238.3 352 256 352L466.7 352L393.3 425.4C380.8 437.9 380.8 458.2 393.3 470.7C405.8 483.2 426.1 483.2 438.6 470.7L566.6 342.7z"/>
                             </svg>
@@ -75,80 +99,183 @@
             </div>
         </div>
     </nav>
-    <div class="drawer" id="drawer">
+    <div class="drawer p-3" id="drawer">
         <h3>Adicionar Item</h3>
-        <button id="addSquare">Mesa Quadrada</button>
-        <button id="addRound">Mesa Redonda</button>
-        <button id="addSeat">Assento</button>
-        <button id="addRoundSeat">Assento Redondo</button>
-        <button id="addCustomArea">Área Customizada</button>
-        <button id="addCustomCircleArea">Área Circular Customizada</button>
-        <button id="addLabel">Etiqueta</button>
+        <div class="accordion" id="addItemAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTables">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTables" aria-expanded="false" aria-controls="collapseTables">
+                        Mesas
+                        <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
+                    </button>
+                </h2>
+                <div id="collapseTables" class="accordion-collapse collapse" aria-labelledby="headingTables">
+                    <div class="accordion-body p-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100 mb-1 add-item-button" id="addSquare"><i class="fas fa-square me-2" aria-hidden="true"></i><span>Mesa Quadrada</span></button>
+                        <button class="btn btn-sm btn-outline-secondary w-100 add-item-button" id="addRound"><i class="fas fa-circle me-2" aria-hidden="true"></i><span>Mesa Redonda</span></button>
+                        <div id="savedTables" class="saved-items-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSeats">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeats" aria-expanded="false" aria-controls="collapseSeats">
+                        Assentos
+                        <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
+                    </button>
+                </h2>
+                <div id="collapseSeats" class="accordion-collapse collapse" aria-labelledby="headingSeats">
+                    <div class="accordion-body p-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100 mb-1 add-item-button" id="addSeat"><i class="fas fa-square me-2" aria-hidden="true"></i><span>Assento Quadrado</span></button>
+                        <button class="btn btn-sm btn-outline-secondary w-100 add-item-button" id="addRoundSeat"><i class="fas fa-circle me-2" aria-hidden="true"></i><span>Assento Redondo</span></button>
+                        <div id="savedSeats" class="saved-items-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingAreas">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAreas" aria-expanded="false" aria-controls="collapseAreas">
+                        Ambientes
+                        <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
+                    </button>
+                </h2>
+                <div id="collapseAreas" class="accordion-collapse collapse" aria-labelledby="headingAreas">
+                    <div class="accordion-body p-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100 mb-1 add-item-button" id="addCustomArea"><i class="fas fa-vector-square me-2" aria-hidden="true"></i><span>Área Quadrada</span></button>
+                        <button class="btn btn-sm btn-outline-secondary w-100 add-item-button" id="addCustomCircleArea"><i class="fas fa-circle me-2" aria-hidden="true"></i><span>Área Redonda</span></button>
+                        <div id="savedAreas" class="saved-items-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingLabels">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLabels" aria-expanded="false" aria-controls="collapseLabels">
+                        Etiquetas
+                        <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
+                    </button>
+                </h2>
+                <div id="collapseLabels" class="accordion-collapse collapse" aria-labelledby="headingLabels">
+                    <div class="accordion-body p-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100 add-item-button" id="addLabel"><i class="fas fa-tag me-2" aria-hidden="true"></i><span>Etiqueta</span></button>
+                        <div id="savedLabels" class="saved-items-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingGrouped">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGrouped" aria-expanded="false" aria-controls="collapseGrouped">
+                        Agrupados
+                        <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
+                    </button>
+                </h2>
+                <div id="collapseGrouped" class="accordion-collapse collapse" aria-labelledby="headingGrouped">
+                    <div class="accordion-body p-2"><div id="savedGroups" class="saved-items-list"></div></div>
+                </div>
+            </div>
+        </div>
     </div>
     <canvas id="canvas"></canvas>
+    <div id="objectToolbar" class="object-toolbar" role="toolbar" aria-label="Ações do objeto">
+        <button id="rotateLeftBtn" type="button" title="-45°" aria-label="Rotação anti-horária -45°"><i class="fas fa-rotate-left"></i></button>
+        <button id="rotateRightBtn" type="button" title="+45°" aria-label="Rotação horária +45°"><i class="fas fa-rotate-right"></i></button>
+        <button id="floatingDuplicateBtn" type="button" title="Duplicar" aria-label="Duplicar"><i class="fas fa-copy"></i></button>
+        <button id="floatingSaveBtn" type="button" title="Salvar item" aria-label="Salvar item"><i class="fas fa-save"></i></button>
+        <button id="floatingLockBtn" type="button" title="Travar grupo" aria-label="Travar grupo"><i class="fas fa-lock-open"></i></button>
+        <button id="floatingDeleteBtn" class="delete-action" type="button" title="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>
+    </div>
     <div class="sidebar" id="sidebar">
-        <h2>Customizar item</h2>
-        <label for="name">Nome:</label>
-        <input type="text" id="name" placeholder="Nome do item">
-
-        <label for="fontSize">Tamanho da fonte:</label>
-        <input type="number" id="fontSize" min="10" max="100" value="24">
-
-        <label for="nameColor">Cor do texto:</label>
-        <input type="color" id="nameColor" value="#000000">
-
-        <label for="width">Largura (cm):</label>
-        <input type="number" id="width" min="50" max="400" value="100">
-
-        <label for="height">Altura (cm):</label>
-        <input type="number" id="height" min="50" max="400" value="100">
-
-        <label for="radius">Raio (cm):</label>
-        <input type="number" id="radius" min="25" max="200" value="50">
-
-        <label for="angle">Ângulo de rotação:</label>
-        <div style="display: flex; gap: 10px;">
-            <input type="range" id="angle" min="0" max="360" value="0" style="flex: 1;">
-            <input type="number" id="angleInput" min="0" max="360" value="0" style="width: 60px;">
+        <div class="customize-title-row">
+            <h2 id="customizeTitle">Item</h2>
+            <button id="saveItemBtn" type="button" title="Salvar item" aria-label="Salvar item"><i class="fas fa-save"></i></button>
         </div>
-
-        <label for="color">Cor:</label>
-        <input type="color" id="color" value="#8B4513">
-
-        <label for="seatColor">Cor dos assentos:</label>
-        <input type="color" id="seatColor" value="#dddddd">
-
-        <label for="seats">Quantidade de assentos:</label>
-        <input type="number" id="seats" min="0" max="12" value="8">
-        <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 assentos caso esteja utilizando as mesas do local</div>
-
-        <label for="counterEnabled" class="checkbox-inline" id="counterEnabledLabel" style="display:none;">
-            <input type="checkbox" id="counterEnabled" checked>
-            <span>Contador de assentos</span>
-        </label>
-
-        <label for="cornerSeats" class="checkbox-inline">
-            <input type="checkbox" id="cornerSeats" checked>
-            <span>Assento nas pontas</span>
-        </label>
-
-        <label for="halfCircle" class="checkbox-inline" id="halfCircleLabel" style="display:none;">
-            <input type="checkbox" id="halfCircle">
-            <span>Meio círculo</span>
-        </label>
-
-        <button id="duplicate">Duplicar</button>
-        <button id="delete">Excluir</button>
+        <div class="accordion customize-accordion" id="customizeAccordion">
+            <div class="accordion-item" id="generalSection">
+                <h3 class="accordion-header" id="generalHeading">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#generalCollapse" aria-expanded="true">Geral</button>
+                </h3>
+                <div id="generalCollapse" class="accordion-collapse collapse show" aria-labelledby="generalHeading">
+                    <div class="accordion-body">
+                        <label for="name">Nome</label>
+                        <input type="text" id="name" placeholder="Nome do item">
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item" id="dimensionsSection">
+                <h3 class="accordion-header" id="dimensionsHeading">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#dimensionsCollapse" aria-expanded="true">Dimensões e posição</button>
+                </h3>
+                <div id="dimensionsCollapse" class="accordion-collapse collapse show" aria-labelledby="dimensionsHeading">
+                    <div class="accordion-body">
+                        <div class="customize-grid">
+                            <div class="field-group" id="widthField"><label for="width">Largura (cm)</label><input type="number" id="width" min="50" max="400" value="100"></div>
+                            <div class="field-group" id="heightField"><label for="height">Altura (cm)</label><input type="number" id="height" min="50" max="400" value="100"></div>
+                            <div class="field-group" id="radiusField"><label for="radius">Raio (cm)</label><input type="number" id="radius" min="25" max="200" value="50"></div>
+                            <div class="field-group"><label for="posX">Posição X</label><input type="number" id="posX" step="1"></div>
+                            <div class="field-group"><label for="posY">Posição Y</label><input type="number" id="posY" step="1"></div>
+                        </div>
+                        <div class="field-group" id="rotationField">
+                            <label for="angleInput">Rotação</label>
+                            <div class="stepper"><button type="button" data-step-target="angleInput" data-step="-45">-45°</button><input type="number" id="angleInput" min="-180" max="180" value="0"><button type="button" data-step-target="angleInput" data-step="45">+45°</button></div>
+                            <input type="range" id="angle" min="-180" max="180" value="0" class="legacy-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item" id="appearanceSection">
+                <h3 class="accordion-header" id="appearanceHeading">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#appearanceCollapse" aria-expanded="true">Aparência</button>
+                </h3>
+                <div id="appearanceCollapse" class="accordion-collapse collapse show" aria-labelledby="appearanceHeading">
+                    <div class="accordion-body">
+                        <div class="color-field"><label for="color">Cor</label><div class="color-row"><input type="color" id="color" value="#808080"><input type="text" id="colorHex" value="#808080" maxlength="7"></div><div class="color-swatches" data-color-target="color"><button type="button" data-color="#111111" aria-label="Preto"></button><button type="button" data-color="#FFFFFF" aria-label="Branco"></button><button type="button" data-color="#808080" aria-label="Cinza"></button><button type="button" data-color="#F5A6A6" aria-label="Vermelho pastel"></button><button type="button" data-color="#A9C7F5" aria-label="Azul pastel"></button><button type="button" data-color="#A9D8B8" aria-label="Verde pastel"></button><button type="button" data-color="#F7D794" aria-label="Amarelo pastel"></button></div></div>
+                        <div class="color-field"><label for="nameColor">Cor do texto</label><div class="color-row"><input type="color" id="nameColor" value="#000000"><input type="text" id="nameColorHex" value="#000000" maxlength="7"></div><div class="color-swatches" data-color-target="nameColor"><button type="button" data-color="#111111" aria-label="Preto"></button><button type="button" data-color="#FFFFFF" aria-label="Branco"></button><button type="button" data-color="#808080" aria-label="Cinza"></button><button type="button" data-color="#F5A6A6" aria-label="Vermelho pastel"></button><button type="button" data-color="#A9C7F5" aria-label="Azul pastel"></button><button type="button" data-color="#A9D8B8" aria-label="Verde pastel"></button><button type="button" data-color="#F7D794" aria-label="Amarelo pastel"></button></div></div>
+                        <div class="field-group" id="fontSizeField"><label for="fontSize">Tamanho do texto</label><div class="stepper"><button type="button" data-step-target="fontSize" data-step="-1">-</button><input type="number" id="fontSize" min="10" max="200" value="54"><button type="button" data-step-target="fontSize" data-step="1">+</button></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item" id="seatsSection">
+                <h3 class="accordion-header" id="seatsHeading">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#seatsCollapse" aria-expanded="true">Assentos</button>
+                </h3>
+                <div id="seatsCollapse" class="accordion-collapse collapse show" aria-labelledby="seatsHeading">
+                    <div class="accordion-body">
+                        <div class="field-group"><label for="seats">Quantidade</label><div class="stepper"><button type="button" data-step-target="seats" data-step="-1">-</button><input type="number" id="seats" min="0" max="12" value="8"><button type="button" data-step-target="seats" data-step="1">+</button></div></div>
+                        <label for="cornerSeats" class="checkbox-inline"><input type="checkbox" id="cornerSeats" checked><span>Assento nas pontas</span></label>
+                        <div class="color-field"><label for="seatColor">Cor dos assentos</label><div class="color-row"><input type="color" id="seatColor" value="#dddddd"><input type="text" id="seatColorHex" value="#DDDDDD" maxlength="7"></div><div class="color-swatches" data-color-target="seatColor"><button type="button" data-color="#111111" aria-label="Preto"></button><button type="button" data-color="#FFFFFF" aria-label="Branco"></button><button type="button" data-color="#808080" aria-label="Cinza"></button><button type="button" data-color="#F5A6A6" aria-label="Vermelho pastel"></button><button type="button" data-color="#A9C7F5" aria-label="Azul pastel"></button><button type="button" data-color="#A9D8B8" aria-label="Verde pastel"></button><button type="button" data-color="#F7D794" aria-label="Amarelo pastel"></button></div></div>
+                        <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 assentos caso esteja utilizando as mesas do local</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <label for="counterEnabled" class="checkbox-inline legacy-control" id="counterEnabledLabel"><input type="checkbox" id="counterEnabled" checked><span>Contador de assentos</span></label>
+        <label for="halfCircle" class="checkbox-inline" id="halfCircleLabel"><input type="checkbox" id="halfCircle"><span>Meio círculo</span></label>
+        <div class="customize-actions"><button id="duplicate">Duplicar</button><button id="delete">Excluir</button></div>
     </div>
     <div class="file-menu-overlay" id="fileMenuOverlay">
         <div class="file-menu">
-            <h3>Arquivo</h3>
-            <button id="saveJson">Salvar neste dispositivo</button>
-            <button id="loadJson">Carregar do dispositivo</button>
-            <button id="saveCloud" style="display: none;">Salvar na nuvem</button>
-            <button id="loadCloud" style="display: none;">Carregar da nuvem</button>
-            <button id="downloadPng">Baixar PNG</button>
-            <button id="closeFileMenu" class="secondary">Fechar</button>
+            <h5 class="mb-4"><i class="fas fa-file"></i> Arquivo</h5>
+            <button id="saveJson" class="btn btn-outline-primary btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-save me-2"></i> Salvar neste dispositivo
+            </button>
+            <button id="loadJson" class="btn btn-outline-primary btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-folder-open me-2"></i> Carregar do dispositivo
+            </button>
+            <button id="saveCloud" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-cloud-arrow-up me-2"></i> Salvar na nuvem
+            </button>
+            <button id="saveAsNew" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-cloud-arrow-up me-2"></i> Salvar como novo
+            </button>
+            <button id="loadCloud" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-cloud-arrow-down me-2"></i> Carregar da nuvem
+            </button>
+            <button id="downloadPng" class="btn btn-outline-info btn-sm w-100 mb-2 text-start">
+                <i class="fas fa-image me-2"></i> Baixar PNG
+            </button>
+            <hr class="my-3">
+            <button id="closeFileMenu" class="btn btn-secondary btn-sm w-100">
+                <i class="fas fa-times me-2"></i> Fechar
+            </button>
             <input type="file" id="fileInput" accept="application/json" style="display:none;">
         </div>
     </div>
@@ -184,19 +311,48 @@
     </div>
     <div id="cloudModal" class="modal">
         <div class="modal-content">
-            <span class="close" id="closeCloudModal">&times;</span>
-            <h2 id="cloudModalTitle">Salvar na nuvem</h2>
-            <div id="saveCloudForm">
-                <input type="text" id="mapName" placeholder="Nome do mapa" required>
-                <button id="saveCloudSubmit">Salvar</button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 id="cloudModalTitle" class="mb-0">Salvar na nuvem</h4>
+                <button type="button" class="btn-close" id="closeCloudModal" aria-label="Fechar"></button>
+            </div>
+            <div id="saveCloudForm" class="mb-3">
+                <div class="input-group">
+                    <input type="text" id="mapName" class="form-control" placeholder="Nome do mapa" required>
+                    <button id="saveCloudSubmit" class="btn btn-success" type="button">
+                        <i class="fas fa-save me-2"></i> Salvar
+                    </button>
+                </div>
             </div>
             <div id="loadCloudList" style="display: none;">
-                <h3>Seus mapas:</h3>
-                <ul id="mapsList"></ul>
+                <h5 class="mb-3">Seus mapas:</h5>
+                <div id="mapsList" class="list-group"></div>
             </div>
-            <p id="cloudError" class="error"></p>
+            <p id="cloudError" class="alert alert-danger mt-3 mb-0" style="display: none;"></p>
         </div>
     </div>
+    <div id="savedItemModal" class="modal">
+        <div class="modal-content saved-item-modal-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 id="savedItemModalTitle" class="mb-0">Editar item salvo</h4>
+                <button type="button" class="btn-close" id="closeSavedItemModal" aria-label="Fechar"></button>
+            </div>
+            <label for="savedItemName">Nome</label>
+            <input type="text" id="savedItemName" class="form-control mb-3" required>
+            <p id="savedItemError" class="alert alert-danger mb-3" style="display: none;"></p>
+            <div class="d-flex justify-content-between gap-2">
+                <button type="button" id="deleteSavedItemBtn" class="btn btn-outline-danger"><i class="fas fa-trash me-2" aria-hidden="true"></i>Apagar</button>
+                <div class="d-flex gap-2">
+                    <button type="button" id="cancelSavedItemBtn" class="btn btn-secondary">Cancelar</button>
+                    <button type="button" id="saveSavedItemBtn" class="btn btn-primary"><i class="fas fa-save me-2" aria-hidden="true"></i>Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="script.js"></script>
+    <div id="zoomControls" class="zoom-controls" aria-label="Controles de zoom">
+        <button id="zoomIn" class="zoom-btn" type="button" title="Aumentar zoom" aria-label="Aumentar zoom">+</button>
+        <button id="zoomOut" class="zoom-btn" type="button" title="Reduzir zoom" aria-label="Reduzir zoom">-</button>
+    </div>
 </body>
 </html>
