@@ -93,12 +93,13 @@ export function draw() {
         const width = table.width || (table.radius ? table.radius * 2 : 0);
         const height = table.height || (table.radius ? table.radius * 2 : 0);
         if (width && height) {
+            const labelOffsetY = height / 2 + 18;
             ctx.save();
             ctx.translate(table.x, table.y);
             ctx.fillStyle = '#111';
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`${width} x ${height} cm`, 0, -(height / 2 + 12));
+            ctx.fillText(`${width} x ${height} cm`, 0, labelOffsetY);
             ctx.restore();
         }
     }

@@ -10,75 +10,16 @@
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark fixed-top">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="toggleDrawer">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
-                        <path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/>
-                    </svg>
-                    <span class="d-none d-sm-inline">Adicionar Item</span>
-                </button>
-                <!-- Removed Selecionar / Excluir / Excluir Tudo per request -->
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-light btn-sm d-flex align-items-center dropdown-toggle" id="fileDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
-                        <path d="M304 112L192 112C183.2 112 176 119.2 176 128L176 512C176 520.8 183.2 528 192 528L448 528C456.8 528 464 520.8 464 512L464 272L376 272C336.2 272 304 239.8 304 200L304 112zM444.1 224L352 131.9L352 200C352 213.3 362.7 224 376 224L444.1 224zM128 128C128 92.7 156.7 64 192 64L325.5 64C342.5 64 358.8 70.7 370.8 82.7L493.3 205.3C505.3 217.3 512 233.6 512 250.6L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 128z"/>
-                    </svg>
-                    <span class="d-none d-sm-inline">Arquivo</span>
-                    </button>
-                    <ul class="dropdown-menu">
-                    <li><button class="dropdown-item" id="newMapBtn">Novo mapa</button></li>
-                    <li><button class="dropdown-item" id="openMapBtn">Meus mapas</button></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item" id="saveBtn">Salvar</button></li>
-                    <li><button class="dropdown-item" id="saveAsBtn">Salvar como...</button></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item" id="importBtn">Importar</button></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li class="dropend">
-                        <button class="dropdown-item d-flex justify-content-between align-items-center" id="exportMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                            Exportar
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><button class="dropdown-item" id="exportPngBtn">PNG</button></li>
-                            <li><button class="dropdown-item" id="exportJpgBtn">JPG</button></li>
-                            <li><button class="dropdown-item" id="exportJsonBtn">JSON</button></li>
-                        </ul>
-                    </li>
-                    </ul>
-                </div>
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-light btn-sm dropdown-toggle" id="editBtn" data-bs-toggle="dropdown" aria-expanded="false">Editar</button>
-                    <ul class="dropdown-menu">
-                        <li><button class="dropdown-item" id="undoBtn"></i>Desfazer <span class="text-muted ms-2">Ctrl+Z</span></button></li>
-                        <li><button class="dropdown-item" id="redoBtn"></i>Refazer <span class="text-muted ms-2">Ctrl+Y</span></button></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><button class="dropdown-item" id="selectMode">Seleção</button></li>
-                        <li><button class="dropdown-item" id="multiSelectMode">Seleção múltipla <span class="text-muted ms-2">Shift + arrastar</span></button></li>
-                        <li><button class="dropdown-item" id="deleteMode">Excluir</button></li>
-                    </ul>
-                </div>
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-light btn-sm dropdown-toggle" id="viewBtn" data-bs-toggle="dropdown" aria-expanded="false">Visualizar</button>
-                    <ul class="dropdown-menu">
-                        <li><button class="dropdown-item" id="showGrid">Mostrar grade</button></li>
-                        <li><button class="dropdown-item" id="showMeasures">Mostrar medidas</button></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><button class="dropdown-item" id="menuZoomIn">Zoom <i class="fas fa-plus me-2"></i></button></li>
-                        <li><button class="dropdown-item" id="menuZoomOut">Zoom <i class="fas fa-minus me-2"></i></button></li>
-                    </ul>
-                </div>
-
-                <!-- removed legacy file menu button -->
-                <div class="input-group input-group-sm ms-2 me-2 flex-grow-1">
+        <div class="container-fluid navbar-container">
+            <!-- Primeira linha: Botão Adicionar, Input, Contador, Login -->
+            <div class="navbar-top-row">
+                <div class="input-group input-group-sm toolbar-input-group">
                     <input type="text" id="toolbarMapName" class="form-control" value="Novo Mapa" placeholder="Nome do mapeamento">
                 </div>
-                <span id="seatCounter" class="text-white fw-bold me-3">Assentos: 0</span>
-            </div>
-            <div class="d-flex align-items-center ms-auto">
                 
-                <div id="login">
+                <span id="seatCounter" class="text-white fw-bold toolbar-counter">Assentos: 0</span>
+                
+                <div id="login" class="ms-auto">
                     <button class="btn btn-outline-light btn-sm" id="loginBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16" aria-hidden="true">
                             <circle cx="8" cy="5" r="2"></circle>
@@ -86,7 +27,7 @@
                         </svg>
                         <span class="d-none d-sm-inline">Entrar</span>
                     </button>
-                    <span id="userDisplay" class="ms-2 text-white d-flex align-items-center">
+                    <span id="userDisplay" class="ms-2 text-white align-items-center" style="display: none;">
                         <span id="userName"></span>
                         <button class="btn btn-outline-light btn-sm me-2 d-flex align-items-center" id="logoutBtn" style="margin-left: 10px;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" class="me-1" aria-hidden="true">
@@ -95,6 +36,87 @@
                             <span class="d-none d-sm-inline">Sair</span>
                         </button>
                     </span>
+                </div>
+            </div>
+            
+            <!-- Segunda linha: Menus (Adicionar, Arquivo, Editar, Visualizar) -->
+            <div class="navbar-bottom-row">
+                <div class="navbar-actions-group">
+                    <button class="btn btn-outline-light btn-sm me-2 ms-2 d-flex align-items-center" id="toggleDrawer">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" fill="currentColor" aria-hidden="true">
+                            <path d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/>
+                        </svg>
+                        <span class="d-none d-md-inline ms-1">Adicionar Item</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm d-flex align-items-center dropdown-toggle" id="fileDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="18" height="18" fill="currentColor" class="me-1" aria-hidden="true">
+                                <path d="M304 112L192 112C183.2 112 176 119.2 176 128L176 512C176 520.8 183.2 528 192 528L448 528C456.8 528 464 520.8 464 512L464 272L376 272C336.2 272 304 239.8 304 200L304 112zM444.1 224L352 131.9L352 200C352 213.3 362.7 224 376 224L444.1 224zM128 128C128 92.7 156.7 64 192 64L325.5 64C342.5 64 358.8 70.7 370.8 82.7L493.3 205.3C505.3 217.3 512 233.6 512 250.6L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 128z"/>
+                            </svg>
+                            <span class="d-none d-lg-inline">Arquivo</span>
+                        </button>
+                    <ul class="dropdown-menu">
+                        <li><button class="dropdown-item" id="newMapBtn">Novo mapa</button></li>
+                        <li><button class="dropdown-item" id="openMapBtn">Meus mapas</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item" id="saveBtn">Salvar</button></li>
+                        <li><button class="dropdown-item" id="saveAsBtn">Salvar como...</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item" id="importBtn">Importar</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="dropend">
+                            <button class="dropdown-item d-flex justify-content-between align-items-center" id="exportMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                Exportar
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" id="exportPngBtn">PNG</button></li>
+                                <li><button class="dropdown-item" id="exportJpgBtn">JPG</button></li>
+                                <li><button class="dropdown-item" id="exportJsonBtn">JSON</button></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    </div>
+                    
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-outline-light btn-sm d-flex align-items-center dropdown-toggle" id="editBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1" aria-hidden="true">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                                <path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            <span class="d-none d-lg-inline">Editar</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" id="undoBtn"><i class="fas fa-undo me-2"></i>Desfazer <span class="text-muted ms-2">Ctrl+Z</span></button></li>
+                            <li><button class="dropdown-item" id="redoBtn"><i class="fas fa-redo me-2"></i>Refazer <span class="text-muted ms-2">Ctrl+Y</span></button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" id="selectMode">Seleção</button></li>
+                            <li><button class="dropdown-item" id="multiSelectMode">Seleção múltipla <span class="text-muted ms-2">Shift + arrastar</span></button></li>
+                            <li><button class="dropdown-item" id="deleteMode">Excluir</button></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-outline-light btn-sm d-flex align-items-center dropdown-toggle" id="viewBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="me-1" aria-hidden="true">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                            <span class="d-none d-lg-inline">Visualizar</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button class="dropdown-item" id="showGrid"><i class="fas fa-border-all me-2"></i>Mostrar grade</button></li>
+                            <li><button class="dropdown-item" id="showMeasures"><i class="fas fa-ruler me-2"></i>Mostrar medidas</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" id="menuZoomIn"><i class="fas fa-plus me-2"></i>Zoom</button></li>
+                            <li><button class="dropdown-item" id="menuZoomOut"><i class="fas fa-minus me-2"></i>Zoom</button></li>
+                        </ul>
+                    </div>
+                    <button class="history-toolbar-btn" id="toolbarUndoBtn" type="button" title="Desfazer" aria-label="Desfazer" disabled>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 7 7v2"/></svg>
+                    </button>
+                    <button class="history-toolbar-btn" id="toolbarRedoBtn" type="button" title="Refazer" aria-label="Refazer" disabled>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0-7 7v2"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -176,17 +198,19 @@
     </div>
     <canvas id="canvas"></canvas>
     <div id="objectToolbar" class="object-toolbar" role="toolbar" aria-label="Ações do objeto">
-        <button id="rotateLeftBtn" type="button" title="-45°" aria-label="Rotação anti-horária -45°"><i class="fas fa-rotate-left"></i></button>
-        <button id="rotateRightBtn" type="button" title="+45°" aria-label="Rotação horária +45°"><i class="fas fa-rotate-right"></i></button>
-        <button id="floatingDuplicateBtn" type="button" title="Duplicar" aria-label="Duplicar"><i class="fas fa-copy"></i></button>
-        <button id="floatingSaveBtn" type="button" title="Salvar item" aria-label="Salvar item"><i class="fas fa-save"></i></button>
-        <button id="floatingLockBtn" type="button" title="Travar grupo" aria-label="Travar grupo"><i class="fas fa-lock-open"></i></button>
-        <button id="floatingDeleteBtn" class="delete-action" type="button" title="Excluir" aria-label="Excluir"><i class="fas fa-trash"></i></button>
+        <button id="rotateLeftBtn" type="button" title="-45°" aria-label="Rotação anti-horária -45°"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H4v5M4.5 9A8 8 0 1 1 6.8 17.5"/></svg></button>
+        <button id="rotateRightBtn" type="button" title="+45°" aria-label="Rotação horária +45°"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5h5v5M19.5 9A8 8 0 1 0 17.2 17.5"/></svg></button>
+        <button id="floatingDuplicateBtn" type="button" title="Duplicar" aria-label="Duplicar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
+        <button id="floatingSaveBtn" type="button" title="Salvar item" aria-label="Salvar item"><svg viewBox="0 0 640 640" aria-hidden="true"><path d="M160 144C151.2 144 144 151.2 144 160L144 480C144 488.8 151.2 496 160 496L480 496C488.8 496 496 488.8 496 480L496 237.3C496 233.1 494.3 229 491.3 226L416 150.6L416 240C416 257.7 401.7 272 384 272L224 272C206.3 272 192 257.7 192 240L192 144L160 144zM240 144L240 224L368 224L368 144L240 144zM96 160C96 124.7 124.7 96 160 96L402.7 96C419.7 96 436 102.7 448 114.7L525.3 192C537.3 204 544 220.3 544 237.3L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 160zM256 384C256 348.7 284.7 320 320 320C355.3 320 384 348.7 384 384C384 419.3 355.3 448 320 448C284.7 448 256 419.3 256 384z"/></svg></button>
+        <button id="floatingLockBtn" type="button" title="Travar grupo" aria-label="Travar grupo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v1"/></svg></button>
+        <button id="floatingDeleteBtn" class="delete-action" type="button" title="Excluir" aria-label="Excluir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v5M14 11v5M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
     </div>
     <div class="sidebar" id="sidebar">
         <div class="customize-title-row">
             <h2 id="customizeTitle">Item</h2>
-            <button id="saveItemBtn" type="button" title="Salvar item" aria-label="Salvar item"><i class="fas fa-save"></i></button>
+            <button id="saveItemBtn" type="button" title="Salvar item" aria-label="Salvar item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M160 144C151.2 144 144 151.2 144 160L144 480C144 488.8 151.2 496 160 496L480 496C488.8 496 496 488.8 496 480L496 237.3C496 233.1 494.3 229 491.3 226L416 150.6L416 240C416 257.7 401.7 272 384 272L224 272C206.3 272 192 257.7 192 240L192 144L160 144zM240 144L240 224L368 224L368 144L240 144zM96 160C96 124.7 124.7 96 160 96L402.7 96C419.7 96 436 102.7 448 114.7L525.3 192C537.3 204 544 220.3 544 237.3L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 160zM256 384C256 348.7 284.7 320 320 320C355.3 320 384 348.7 384 384C384 419.3 355.3 448 320 448C284.7 448 256 419.3 256 384z"/></svg>
+            </button>
         </div>
         <div class="accordion customize-accordion" id="customizeAccordion">
             <div class="accordion-item" id="generalSection">
@@ -239,8 +263,8 @@
                 </h3>
                 <div id="seatsCollapse" class="accordion-collapse collapse show" aria-labelledby="seatsHeading">
                     <div class="accordion-body">
-                        <div class="field-group"><label for="seats">Quantidade</label><div class="stepper"><button type="button" data-step-target="seats" data-step="-1">-</button><input type="number" id="seats" min="0" max="12" value="8"><button type="button" data-step-target="seats" data-step="1">+</button></div></div>
                         <label for="cornerSeats" class="checkbox-inline"><input type="checkbox" id="cornerSeats" checked><span>Assento nas pontas</span></label>
+                        <div class="field-group"><label for="seats">Quantidade</label><div class="stepper"><button type="button" data-step-target="seats" data-step="-1">-</button><input type="number" id="seats" min="0" max="12" value="8"><button type="button" data-step-target="seats" data-step="1">+</button></div></div>
                         <div class="color-field"><label for="seatColor">Cor dos assentos</label><div class="color-row"><input type="color" id="seatColor" value="#dddddd"><input type="text" id="seatColorHex" value="#DDDDDD" maxlength="7"></div><div class="color-swatches" data-color-target="seatColor"><button type="button" data-color="#111111" aria-label="Preto"></button><button type="button" data-color="#FFFFFF" aria-label="Branco"></button><button type="button" data-color="#808080" aria-label="Cinza"></button><button type="button" data-color="#F5A6A6" aria-label="Vermelho pastel"></button><button type="button" data-color="#A9C7F5" aria-label="Azul pastel"></button><button type="button" data-color="#A9D8B8" aria-label="Verde pastel"></button><button type="button" data-color="#F7D794" aria-label="Amarelo pastel"></button></div></div>
                         <div id="seatWarning" class="warning-message" style="display:none;">É recomendado o uso de apenas 8 assentos caso esteja utilizando as mesas do local</div>
                     </div>
@@ -251,61 +275,41 @@
         <label for="halfCircle" class="checkbox-inline" id="halfCircleLabel"><input type="checkbox" id="halfCircle"><span>Meio círculo</span></label>
         <div class="customize-actions"><button id="duplicate">Duplicar</button><button id="delete">Excluir</button></div>
     </div>
-    <div class="file-menu-overlay" id="fileMenuOverlay">
-        <div class="file-menu">
-            <h5 class="mb-4"><i class="fas fa-file"></i> Arquivo</h5>
-            <button id="saveJson" class="btn btn-outline-primary btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-save me-2"></i> Salvar neste dispositivo
-            </button>
-            <button id="loadJson" class="btn btn-outline-primary btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-folder-open me-2"></i> Carregar do dispositivo
-            </button>
-            <button id="saveCloud" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-cloud-arrow-up me-2"></i> Salvar na nuvem
-            </button>
-            <button id="saveAsNew" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-cloud-arrow-up me-2"></i> Salvar como novo
-            </button>
-            <button id="loadCloud" class="btn btn-outline-success btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-cloud-arrow-down me-2"></i> Carregar da nuvem
-            </button>
-            <button id="downloadPng" class="btn btn-outline-info btn-sm w-100 mb-2 text-start">
-                <i class="fas fa-image me-2"></i> Baixar PNG
-            </button>
-            <hr class="my-3">
-            <button id="closeFileMenu" class="btn btn-secondary btn-sm w-100">
-                <i class="fas fa-times me-2"></i> Fechar
-            </button>
-            <input type="file" id="fileInput" accept="application/json" style="display:none;">
-        </div>
-    </div>
+    <input type="file" id="fileInput" accept="application/json" style="display:none;">
     <div id="authModal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="closeAuthModal">&times;</span>
-            <div id="authTabs">
+        <div class="modal-content auth-modal">
+            <div class="auth-modal-header">
+                <h2 class="auth-modal-title">Autenticação</h2>
+                <span class="close" id="closeAuthModal">&times;</span>
+            </div>
+            <div id="authTabs" class="auth-tabs">
                 <button id="loginTab" class="tab active">Login</button>
                 <button id="registerTab" class="tab">Cadastro</button>
             </div>
             <div id="loginForm" class="auth-form">
-                <h2>Login</h2>
-                <input type="email" id="loginEmail" placeholder="Email" required>
-                <input type="password" id="loginPassword" placeholder="Senha" required>
-                <button id="loginSubmit">Entrar</button>
-                <hr style="margin: 20px 0;">
+                <input type="email" id="loginEmail" class="auth-input" placeholder="Email" required>
+                <input type="password" id="loginPassword" class="auth-input" placeholder="Senha" required>
+                <button id="loginSubmit" class="auth-submit-btn">Entrar</button>
+                <div class="divider">OU</div>
                 <button id="googleLogin" class="google-btn">
-                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" style="width: 18px; height: 18px; margin-right: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" style="margin-right: 10px;">
+                        <path fill="#1F2937" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#1F2937" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#1F2937" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#1F2937" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
                     Entrar com Google
                 </button>
-                <p id="loginError" class="error"></p>
+                <p id="loginError" class="error" style="display: none;"></p>
             </div>
             <div id="registerForm" class="auth-form" style="display: none;">
-                <h2>Cadastro</h2>
-                <input type="text" id="registerName" placeholder="Nome" required>
-                <input type="email" id="registerEmail" placeholder="Email" required>
-                <input type="password" id="registerPassword" placeholder="Senha" required>
-                <input type="date" id="registerBirthday" required>
-                <button id="registerSubmit">Cadastrar</button>
-                <p id="registerError" class="error"></p>
+                <input type="text" id="registerName" class="auth-input" placeholder="Nome completo" required>
+                <input type="email" id="registerEmail" class="auth-input" placeholder="Email" required>
+                <input type="password" id="registerPassword" class="auth-input" placeholder="Senha" required>
+                <label for="registerBirthday" class="auth-label">Data de nascimento</label>
+                <input type="date" id="registerBirthday" class="auth-input" required>
+                <button id="registerSubmit" class="auth-submit-btn">Cadastrar</button>
+                <p id="registerError" class="error" style="display: none;"></p>
             </div>
         </div>
     </div>

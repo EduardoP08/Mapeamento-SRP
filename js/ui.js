@@ -1,11 +1,11 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteAllBtn, fileDropdownBtn, fileMenuOverlay, saveJsonBtn, loadJsonBtn, downloadPngBtn, closeFileMenuBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, saveCloudBtn, loadCloudBtn, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
 import { draw, getCanvasCoords } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
 import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
 import { Table } from './table.js';
-import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn } from './dom.js';
+import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
 
 const tooltip = document.createElement('div');
 tooltip.className = 'popover-tooltip';
@@ -43,6 +43,8 @@ function captureHistoryState() {
 function updateHistoryButtons() {
     if (undoBtn) undoBtn.disabled = undoHistory.length === 0;
     if (redoBtn) redoBtn.disabled = redoHistory.length === 0;
+    if (toolbarUndoBtn) toolbarUndoBtn.disabled = undoHistory.length === 0;
+    if (toolbarRedoBtn) toolbarRedoBtn.disabled = redoHistory.length === 0;
 }
 
 function clearHistory() {
@@ -239,19 +241,6 @@ function updateZoomControlsPosition() {
     } else {
         zoomControls.style.right = `10px`;
     }
-}
-
-function downloadJsonWithName(filename) {
-    const blob = new Blob([serializeLayout()], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename.endsWith('.json') ? filename : `${filename}.json`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-}
-
-function closeFileMenu() {
-    fileMenuOverlay.classList.remove('show');
 }
 
 function downloadJson() {
@@ -487,7 +476,9 @@ function updateFloatingLockIcon() {
     if (!floatingLockBtn) return;
     floatingLockBtn.title = state.groupLocked ? 'Destravar grupo' : 'Travar grupo';
     floatingLockBtn.setAttribute('aria-label', state.groupLocked ? 'Destravar grupo' : 'Travar grupo');
-    floatingLockBtn.innerHTML = `<i class="fas fa-lock${state.groupLocked ? '' : '-open'}" aria-hidden="true"></i>`;
+    floatingLockBtn.innerHTML = state.groupLocked
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v1"/></svg>';
 }
 
 function hideObjectToolbar() {
@@ -765,17 +756,13 @@ function switchToRegister() {
 export function updateUIForUser(user) {
     if (user) {
         if (loginBtn) loginBtn.style.display = 'none';
-        if (userDisplay) userDisplay.style.display = 'inline-flex';
+        if (userDisplay) userDisplay.style.display = 'flex';
         userName.textContent = `Olá, ${state.currentUserData?.name || user.displayName || user.email}`;
-        if (saveCloudBtn) saveCloudBtn.style.display = '';
-        if (loadCloudBtn) loadCloudBtn.style.display = '';
         loadSavedItems();
     } else {
         if (loginBtn) loginBtn.style.display = '';
         if (userName) userName.textContent = '';
         if (userDisplay) userDisplay.style.display = 'none';
-        if (saveCloudBtn) saveCloudBtn.style.display = 'none';
-        if (loadCloudBtn) loadCloudBtn.style.display = 'none';
         loadSavedItems();
     }
 }
@@ -788,10 +775,8 @@ function showCloudModal(isSave) {
     cloudError.textContent = '';
     cloudError.style.display = 'none';
     if (isSave) {
-        // Ajusta título conforme o modo de salvamento
-        if (saveMode === 'local') {
-            cloudModalTitle.textContent = 'Salvar arquivo (JSON)';
-        } else if (saveMode === 'rename') {
+        // Ajusta o titulo conforme a operacao de mapa.
+        if (saveMode === 'rename') {
             cloudModalTitle.textContent = 'Renomear mapa';
         } else {
             cloudModalTitle.textContent = 'Salvar na nuvem';
@@ -1319,12 +1304,16 @@ if (menuZoomInBtn) menuZoomInBtn.addEventListener('click', () => zoomFromCenter(
 if (menuZoomOutBtn) menuZoomOutBtn.addEventListener('click', () => zoomFromCenter(-1));
 if (showGridBtn) showGridBtn.addEventListener('click', () => {
     state.showGrid = !state.showGrid;
-    showGridBtn.textContent = state.showGrid ? 'Ocultar grade' : 'Mostrar grade';
+    showGridBtn.innerHTML = state.showGrid
+        ? '<i class="fas fa-border-all me-2"></i>Ocultar grade'
+        : '<i class="fas fa-border-all me-2"></i>Mostrar grade';
     draw();
 });
 if (showMeasuresBtn) showMeasuresBtn.addEventListener('click', () => {
     state.showMeasures = !state.showMeasures;
-    showMeasuresBtn.textContent = state.showMeasures ? 'Ocultar medidas' : 'Mostrar medidas';
+    showMeasuresBtn.innerHTML = state.showMeasures
+        ? '<i class="fas fa-ruler me-2"></i>Ocultar medidas'
+        : '<i class="fas fa-ruler me-2"></i>Mostrar medidas';
     draw();
 });
 
@@ -1359,24 +1348,7 @@ if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => {
     }
 });
 
-// Ao salvar localmente, abrir modal para nome
-if (saveJsonBtn) {
-    saveJsonBtn.addEventListener('click', (e) => {
-        saveMode = 'local';
-        pendingRenameMapId = null;
-        showCloudModal(true);
-    });
-}
-// Salvar na nuvem: abrir modal em modo cloud
-if (saveCloudBtn) {
-    saveCloudBtn.addEventListener('click', (e) => {
-        saveMode = 'cloud';
-        pendingRenameMapId = null;
-        mapNameInput.value = toolbarMapName.value || 'Novo Mapeamento';
-        showCloudModal(true);
-    });
-}
-// Salvar como novo a partir da toolbar
+// Acoes de arquivo da toolbar
 if (saveAsNewBtn) {
     saveAsNewBtn.addEventListener('click', (e) => {
         saveMode = 'cloud-new';
@@ -1385,15 +1357,7 @@ if (saveAsNewBtn) {
         showCloudModal(true);
     });
 }
-if (loadJsonBtn) loadJsonBtn.addEventListener('click', () => fileInput && fileInput.click());
-if (downloadPngBtn) downloadPngBtn.addEventListener('click', downloadCanvasPng);
-if (closeFileMenuBtn) closeFileMenuBtn.addEventListener('click', closeFileMenu);
 if (fileInput) fileInput.addEventListener('change', handleFileInputChange);
-if (fileMenuOverlay) fileMenuOverlay.addEventListener('click', (e) => {
-    if (e.target === fileMenuOverlay) {
-        closeFileMenu();
-    }
-});
 
 // Toolbar file actions
 if (newMapBtn) newMapBtn.addEventListener('click', () => {
@@ -1744,6 +1708,8 @@ if (floatingLockBtn) floatingLockBtn.addEventListener('click', () => {
     updateFloatingLockIcon();
 });
 if (floatingDeleteBtn) floatingDeleteBtn.addEventListener('click', () => deleteBtn && deleteBtn.click());
+if (toolbarUndoBtn) toolbarUndoBtn.addEventListener('click', undo);
+if (toolbarRedoBtn) toolbarRedoBtn.addEventListener('click', redo);
 if (saveItemBtn) saveItemBtn.addEventListener('click', saveSelectedItem);
 if (closeSavedItemModal) closeSavedItemModal.addEventListener('click', hideSavedItemModal);
 if (cancelSavedItemBtn) cancelSavedItemBtn.addEventListener('click', hideSavedItemModal);
@@ -1753,7 +1719,7 @@ if (savedItemModal) savedItemModal.addEventListener('click', event => {
     if (event.target === savedItemModal) hideSavedItemModal();
 });
 
-[rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingLockBtn, floatingDeleteBtn, saveItemBtn].forEach(button => {
+[rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingLockBtn, floatingDeleteBtn, toolbarUndoBtn, toolbarRedoBtn, saveItemBtn].forEach(button => {
     if (button) button.addEventListener('mousedown', event => event.stopPropagation());
 });
 
@@ -1865,31 +1831,115 @@ if (authModal) authModal.addEventListener('click', (e) => {
     }
 });
 
+// Definir data máxima de nascimento como hoje
+const today = new Date().toISOString().split('T')[0];
+const registerBirthdayInput = document.getElementById('registerBirthday');
+if (registerBirthdayInput) {
+    registerBirthdayInput.max = today;
+}
+
 if (loginTab) loginTab.addEventListener('click', switchToLogin);
 if (registerTab) registerTab.addEventListener('click', switchToRegister);
+
+// Login with Enter key
+if (document.getElementById('loginPassword')) {
+    document.getElementById('loginEmail').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('loginForm').style.display !== 'none') {
+            if (loginSubmit) loginSubmit.click();
+        }
+    });
+    document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('loginForm').style.display !== 'none') {
+            if (loginSubmit) loginSubmit.click();
+        }
+    });
+}
+
+// Register with Enter key
+if (document.getElementById('registerBirthday')) {
+    document.getElementById('registerName').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
+            if (registerSubmit) registerSubmit.click();
+        }
+    });
+    document.getElementById('registerEmail').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
+            if (registerSubmit) registerSubmit.click();
+        }
+    });
+    document.getElementById('registerPassword').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
+            if (registerSubmit) registerSubmit.click();
+        }
+    });
+    document.getElementById('registerBirthday').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
+            if (registerSubmit) registerSubmit.click();
+        }
+    });
+}
 
 if (loginSubmit) loginSubmit.addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    
+    // Limpar erro anterior
+    loginError.textContent = '';
+    loginError.style.display = 'none';
+    
     try {
         await loginUser(email, password);
         hideAuthModal();
     } catch (error) {
         loginError.textContent = error.message;
+        loginError.style.display = 'block';
     }
 });
 
 // Register handler
 if (registerSubmit) registerSubmit.addEventListener('click', async () => {
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const birthday = document.getElementById('registerBirthday').value;
+    const birthdayInput = document.getElementById('registerBirthday');
+    
+    // Limpar erro anterior
+    registerError.textContent = '';
+    registerError.style.display = 'none';
+    
+    // Validação de campos vazios
+    if (!name || !email || !password || !birthday) {
+        registerError.textContent = 'Por favor, preencha todos os campos.';
+        registerError.style.display = 'block';
+        return;
+    }
+    
+    // Validação de data de nascimento
+    const birthDate = new Date(birthday);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (birthDate >= today) {
+        registerError.textContent = 'A data de nascimento não pode ser no futuro.';
+        registerError.style.display = 'block';
+        birthdayInput.focus();
+        return;
+    }
+    
+    // Validação de idade mínima (opcional: verificar se tem pelo menos 13 anos)
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        // Se ainda não completou aniversário este ano
+    }
+    
     try {
         await registerUser(name, email, password, birthday);
         hideAuthModal();
     } catch (error) {
         registerError.textContent = error.message;
+        registerError.style.display = 'block';
     }
 });
 
@@ -1924,16 +1974,7 @@ saveCloudSubmit.addEventListener('click', async () => {
         return;
     }
     try {
-        if (saveMode === 'local') {
-            downloadJsonWithName(name);
-            // Atualiza toolbar com o nome salvo
-            toolbarMapName.value = name;
-            state.currentCloudMapId = null;
-            hideCloudModal();
-            await loadMapsList();
-            finishPendingNewIfRequested();
-            alert('Arquivo salvo no dispositivo.');
-        } else if (saveMode === 'rename' && pendingRenameMapId) {
+        if (saveMode === 'rename' && pendingRenameMapId) {
             await renameMapInCloud(pendingRenameMapId, name);
             pendingRenameMapId = null;
             saveMode = 'cloud';
@@ -1970,7 +2011,6 @@ saveCloudSubmit.addEventListener('click', async () => {
         cloudError.style.display = 'block';
     }
 });
-loadCloudBtn.addEventListener('click', () => showCloudModal(false));
 closeCloudModal.addEventListener('click', hideCloudModal);
 cloudModal.addEventListener('click', (e) => {
     if (e.target === cloudModal) {

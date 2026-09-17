@@ -5,113 +5,212 @@ body {
     overflow: hidden;
 }
 
-.toolbar {
+/* Navbar fixa e sem overflow */
+.navbar {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
     width: 100%;
-    height: 40px;
-    background-color: #333;
-    color: white;
+    max-width: 100%;
+    z-index: 1000;
+    padding: 0;
+}
+
+.navbar.fixed-top {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+}
+
+/* Container principal */
+.navbar-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Primeira linha: Botão Adicionar, Input, Contador, Login */
+.navbar-top-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    padding: 10px 10px 8px;
-    z-index: 1000;
+    gap: 5px;
+    padding: 8px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1 1 auto;
 }
 
-.toolbar button, .toolbar span {
-    margin: 0 5px;
-    padding: 8px 12px;
-    background-color: #555;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
+/* Segunda linha: Menus */
+.navbar-bottom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#login {
-    margin-right: 25px;
-}
-
-.toolbar-zoom {
-    padding: 4px 8px;
-    margin: 0 6px;
+.navbar-actions-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: transparent;
-    border-radius: 6px;
+    gap: 5px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
-.toolbar-zoom label {
+/* Botões da navbar */
+.navbar .btn {
+    padding: 5px 6px;
     font-size: 0.85rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.navbar .btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    flex-shrink: 0;
+}
+
+.history-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: #6b7378;
+    cursor: pointer;
+    transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.history-toolbar-btn svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.history-toolbar-btn:not(:disabled) {
+    color: #d9dee2;
+}
+
+.history-toolbar-btn:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.14);
     color: #fff;
 }
 
-.toolbar-zoom input[type="range"] {
-    width: 110px;
+.history-toolbar-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 2px;
 }
 
-.toolbar-zoom span {
-    min-width: 40px;
-    text-align: right;
-    font-weight: bold;
-    padding: 5px 8px;
-    background-color: #444;
+.history-toolbar-btn:disabled {
+    cursor: not-allowed;
 }
 
-/* Toolbar map name styling */
+/* Dropdowns */
+.navbar .dropdown {
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Input group responsivo */
+.toolbar-input-group {
+    flex: 1 1 auto;
+    min-width: 100px;
+    max-width: 400px;
+}
+
 #toolbarMapName {
     background: transparent;
     color: #fff;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 6px;
     padding: 6px 10px;
+    min-width: 0;
+    font-size: 0.9rem;
 }
 
-/* Make the input group expand to fill remaining space */
-.input-group.flex-grow-1 {
-    flex: 1 1 auto;
-    max-width: none;
-}
-
-/* Slightly reduce default navbar button spacing */
-.navbar .btn {
-    padding: 6px 8px;
-}
-
-.toolbar button:hover {
-    background-color: #777;
-}
-
-#deleteAll, #toggleDrawer {
-    white-space: nowrap;
-    display: inline-block;
-}
-
-#seatCounter {
-    margin-left: auto;
+/* Contador de assentos */
+.toolbar-counter {
+    margin: 0;
     font-weight: bold;
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
     padding: 4px 8px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
 }
 
-.file-menu-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    display: none;
+/* Login */
+#login {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex !important;
     align-items: center;
-    justify-content: center;
-    z-index: 1100;
+    gap: 3px;
 }
 
-.file-menu-overlay.show {
-    display: flex;
+#userDisplay {
+    display: flex !important;
+    align-items: center;
+}
+
+/* Dropdown menus - fixar posicionamento com navbar fixa */
+.navbar .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    min-width: 160px;
+}
+
+.navbar-bottom-row .dropdown-menu {
+    top: 100%;
+    left: 0;
+}
+
+.navbar .dropdown-menu.show {
+    display: block;
+}
+
+.navbar .dropdown-item:active {
+    background-color: #3b82f6;
+}
+
+/* Adjust body padding to account for navbar height */
+body {
+    padding-top: 52px;
+}
+
+/* Ajustar altura da navbar conforme tela */
+@media (max-width: 768px) {
+    body {
+        padding-top: 95px;
+    }
 }
 
 /* Utility to force-hide elements when JS toggles visibility */
@@ -133,29 +232,6 @@ body {
     white-space: nowrap;
     font-size: 0.9rem;
 }
-
-.file-menu {
-    width: 320px;
-    padding: 20px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-}
-
-.file-menu h5 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 1.25rem;
-}
-
-.file-menu button {
-    font-weight: 500;
-}
-
-.file-menu button i {
-    width: 18px;
-}
-
 
 .drawer {
     position: fixed;
@@ -363,6 +439,23 @@ canvas {
     cursor: pointer;
 }
 
+.object-toolbar button svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin: auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.object-toolbar button#floatingSaveBtn svg {
+    fill: currentColor;
+    stroke: none;
+}
+
 .object-toolbar button:hover {
     background: rgba(255, 255, 255, 0.16);
 }
@@ -404,10 +497,21 @@ canvas {
     background: transparent;
     color: #1976d2;
     cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
 .customize-title-row button:hover {
     background: #eaf2fb;
+    color: #125ea8;
+}
+
+.customize-title-row button:active {
+    transform: scale(0.94);
+}
+
+.customize-title-row button:focus-visible {
+    outline: 2px solid rgba(25, 118, 210, 0.45);
+    outline-offset: 2px;
 }
 
 /* Floating zoom buttons (bottom-right, stacked) */
@@ -461,12 +565,9 @@ canvas {
 
 .sidebar h2 {
     margin-top: 0;
-    margin-bottom: 20px;
     font-size: 1.35rem;
     font-weight: 700;
     color: #333;
-    border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 12px;
 }
 
 .customize-accordion {
@@ -630,28 +731,59 @@ canvas {
 .checkbox-inline input[type="checkbox"] {
     appearance: none;
     -webkit-appearance: none;
-    width: 15px;
-    height: 15px;
-    margin: 0 6px 0 0;
-    border: 1px solid #6d777c;
-    border-radius: 3px;
+    display: inline-grid;
+    place-content: center;
+    width: 16px;
+    height: 16px;
+    margin: 0 7px 0 0;
+    border: 1.5px solid #9aa7ad;
+    border-radius: 4px;
     background: #fff;
-    vertical-align: -3px;
     cursor: pointer;
+    transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+
+
+.checkbox-inline input[type="checkbox"]:hover {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.checkbox-inline input[type="checkbox"]::after {
+    content: "";
+    width: 7px;
+    height: 4px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) scale(0);
+    transition: transform 0.12s ease;
 }
 
 .checkbox-inline input[type="checkbox"]:checked {
-    border-color: #111;
-    background: #111;
+    border-color: #1976d2;
+    background: #1976d2;
+}
+
+.checkbox-inline input[type="checkbox"]:checked::after {
+    transform: rotate(-45deg) scale(1);
 }
 
 .checkbox-inline input[type="checkbox"]:focus-visible {
-    outline: 2px solid rgba(76, 175, 80, 0.45);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.22);
     outline-offset: 2px;
 }
 
 .checkbox-inline span {
     display: inline-block;
+}
+
+.sidebar .checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    line-height: 1.2;
 }
 
 .sidebar input[type="range"] {
@@ -717,7 +849,7 @@ canvas {
 }
 
 
-.sidebar button:hover {
+.sidebar .customize-actions #delete:hover {
     background-color: #d32f2f;
 }
 #duplicate,
@@ -770,93 +902,478 @@ canvas {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
 }
 
 .modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 400px;
-    border-radius: 8px;
+    background-color: #ffffff;
+    margin: 10% auto;
+    padding: 30px;
+    border: none;
+    width: 90%;
+    max-width: 420px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.auth-modal {
+    padding: 0 !important;
+}
+
+.auth-modal-header {
+    padding: 20px 30px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-modal-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1f2937;
 }
 
 .close {
-    color: #aaa;
-    float: right;
+    color: #6b7280;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    padding: 0;
+    border: none;
+    background: none;
+    transition: color 0.2s ease;
 }
 
 .close:hover {
-    color: black;
+    color: #1f2937;
 }
 
-.auth-form input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.auth-form {
+    padding: 30px;
 }
 
-.auth-form button {
-    width: 100%;
-    padding: 10px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.auth-form button:hover {
-    background-color: #45a049;
-}
-
-.google-btn {
-    width: 100%;
-    padding: 10px;
-    background-color: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+.auth-tabs {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.google-btn:hover {
-    background-color: #3367d6;
-}
-
-.error {
-    color: red;
-    font-size: 14px;
-}
-
-#authTabs {
-    display: flex;
-    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    margin: 0;
 }
 
 .tab {
     flex: 1;
-    padding: 10px;
-    background-color: #f1f1f1;
+    padding: 15px 20px;
+    background-color: transparent;
     border: none;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.tab:hover {
+    color: #374151;
 }
 
 .tab.active {
-    background-color: #4CAF50;
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 12px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.auth-input::placeholder {
+    color: #9ca3af;
+}
+
+.auth-label {
+    display: block;
+    margin: 15px 0 8px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.auth-submit-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #3b82f6;
     color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+/* ========== RESPONSIVIDADE ========== */
+
+/* Desktop (acima de 1200px) */
+@media (min-width: 1201px) {
+    .navbar-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .navbar-bottom-row {
+        order: 1;
+        display: flex !important;
+        padding: 0 12px 0 0;
+        border-top: none;
+        width: auto;
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+
+    .navbar-top-row {
+        order: 2;
+        gap: 8px;
+        padding: 10px 12px;
+        flex-wrap: nowrap;
+        width: auto;
+        flex: 1 1 auto;
+        justify-content: flex-start;
+    }
+    
+    .navbar-actions-group {
+        justify-content: flex-start;
+    }
+    
+    .toolbar-input-group {
+        max-width: 500px;
+        flex: 1 1 auto;
+    }
+}
+
+/* Tablets grandes e desktops (1025px - 1200px) */
+@media (min-width: 1025px) and (max-width: 1200px) {
+    .navbar-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .navbar-bottom-row {
+        order: 1;
+        display: flex !important;
+        padding: 0 10px 0 0;
+        border-top: none;
+        width: auto;
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+
+    .navbar-top-row {
+        order: 2;
+        gap: 6px;
+        padding: 8px 10px;
+        flex-wrap: nowrap;
+        width: auto;
+        flex: 1 1 auto;
+        justify-content: flex-start;
+    }
+    
+    .navbar-actions-group {
+        justify-content: flex-start;
+    }
+    
+    .toolbar-input-group {
+        max-width: 350px;
+        flex: 1 1 auto;
+    }
+    
+    .navbar .btn {
+        padding: 5px 6px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Tablets grandes (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .navbar-top-row {
+        gap: 4px;
+        padding: 8px 8px;
+    }
+    
+    .navbar-bottom-row {
+        display: flex !important;
+        padding: 0 8px 8px;
+        border-top: none;
+    }
+    
+    .toolbar-input-group {
+        max-width: 250px;
+        flex: 1 1 auto;
+    }
+    
+    .navbar .btn {
+        padding: 4px 5px;
+        font-size: 0.75rem;
+    }
+    
+    .toolbar-counter {
+        font-size: 0.75rem;
+    }
+}
+
+/* Tablets pequenos (577px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+    .navbar-container {
+        flex-direction: column;
+    }
+    
+    .navbar-top-row {
+        gap: 3px;
+        padding: 6px 8px;
+        flex-wrap: wrap;
+    }
+    
+    .navbar-bottom-row {
+        display: flex !important;
+        gap: 3px;
+        padding: 6px 8px;
+    }
+    
+    .toolbar-input-group {
+        max-width: 150px;
+        flex: 1 1 150px;
+        min-width: 120px;
+    }
+    
+    .navbar .btn {
+        padding: 4px 5px;
+        font-size: 0.7rem;
+        min-width: 32px;
+        height: 32px;
+        justify-content: center;
+    }
+    
+    .navbar .btn svg {
+        width: 14px;
+        height: 14px;
+        margin-right: 0 !important;
+        display: block;
+    }
+    
+    .navbar .btn span {
+        display: none !important;
+    }
+    
+    .navbar .btn span.d-lg-inline {
+        display: none !important;
+    }
+    
+    .toolbar-counter {
+        font-size: 0.7rem;
+        padding: 2px 4px;
+    }
+    
+    #login {
+        margin-left: auto;
+    }
+}
+
+/* Smartphones (máx 576px) */
+@media (max-width: 576px) {
+    .navbar {
+        min-height: auto;
+    }
+    
+    .navbar-container {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .navbar-top-row {
+        gap: 2px;
+        padding: 5px 6px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    
+    .navbar-bottom-row {
+        display: flex !important;
+        gap: 2px;
+        padding: 5px 6px;
+        width: 100%;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-wrap: wrap;
+    }
+    
+    .navbar .btn {
+        padding: 3px 4px;
+        font-size: 0.65rem;
+        min-width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        justify-content: center;
+    }
+    
+    .navbar .btn svg {
+        width: 13px;
+        height: 13px;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        display: block;
+    }
+    
+    .navbar .btn span {
+        display: none !important;
+    }
+    
+    .toolbar-input-group {
+        max-width: 120px;
+        flex: 0 1 120px;
+        min-width: 100px;
+        margin: 0 2px;
+    }
+    
+    #toolbarMapName {
+        padding: 4px 6px;
+        font-size: 0.8rem;
+    }
+    
+    .toolbar-counter {
+        font-size: 0.65rem;
+        padding: 2px 3px;
+        margin: 0;
+    }
+    
+    #login {
+        margin-left: auto;
+        flex-shrink: 0;
+        gap: 1px;
+    }
+    
+    #loginBtn {
+        min-width: 30px;
+        padding: 3px 4px;
+    }
+    
+    #userDisplay {
+        display: flex !important;
+        align-items: center;
+        gap: 1px;
+        flex-wrap: nowrap;
+    }
+    
+    #userName {
+        display: none !important;
+    }
+    
+    #logoutBtn {
+        min-width: 30px;
+        padding: 3px 4px;
+        margin-left: 1px !important;
+    }
+    
+    .navbar .dropdown {
+        margin: 0;
+    }
+}
+
+/* Tablets pequenos (577px - 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+    .navbar .dropdown {
+        margin-right: 2px !important;
+    }
+    
+    .navbar .btn {
+        padding: 4px 5px;
+        font-size: 0.75rem;
+    }
+    
+    .toolbar-input-group {
+        max-width: 120px;
+        flex: 0 1 120px;
+    }
+    
+    .toolbar-counter {
+        font-size: 0.75rem;
+    }
+    
+    .drawer {
+        width: 85% !important;
+    }
+    
+    .sidebar {
+        width: 85% !important;
+    }
+    
+    .modal-content {
+        width: 90%;
+        max-width: 420px;
+    }
+}
+
+/* Tablets grandes (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .toolbar-input-group {
+        max-width: 250px;
+        flex: 0 1 250px;
+    }
+    
+    .drawer {
+        width: 80% !important;
+        max-width: 350px;
+    }
+    
+    .sidebar {
+        width: 80% !important;
+        max-width: 350px;
+    }
+}
+
+/* Desktop (acima de 1024px) */
+@media (min-width: 1025px) {
+    .toolbar-input-group {
+        flex: 1 1 auto;
+        max-width: 600px;
+    }
+}
+
+/* Estilos de formulário e feedback */
+.btn-secondary {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background-color: #fee2e2;
+    border-radius: 6px;
+    border-left: 3px solid #dc2626;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
 }
 
 #mapsList {
