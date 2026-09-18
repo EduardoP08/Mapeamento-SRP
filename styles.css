@@ -201,6 +201,60 @@ body {
     background-color: #3b82f6;
 }
 
+.delete-mode-message {
+    position: fixed;
+    top: 66px;
+    left: 50%;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 40px;
+    padding: 9px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-left: 3px solid #f87171;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.96);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+    color: #f8fafc;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.delete-mode-message.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.delete-mode-message svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: #f87171;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (max-width: 1200px) {
+    .delete-mode-message {
+        top: 112px;
+    }
+}
+
+@media (max-width: 768px) {
+    .delete-mode-message {
+        top: 94px;
+        max-width: calc(100vw - 24px);
+        white-space: nowrap;
+    }
+}
+
 /* Adjust body padding to account for navbar height */
 body {
     padding-top: 52px;

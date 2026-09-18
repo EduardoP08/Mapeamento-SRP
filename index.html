@@ -104,8 +104,9 @@
                             <span class="d-none d-lg-inline">Visualizar</span>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><button class="dropdown-item" id="showGrid"><i class="fas fa-border-all me-2"></i>Mostrar grade</button></li>
-                            <li><button class="dropdown-item" id="showMeasures"><i class="fas fa-ruler me-2"></i>Mostrar medidas</button></li>
+                            <li><label class="dropdown-item d-flex align-items-center gap-2" for="showGrid"><input class="form-check-input mt-0" type="checkbox" id="showGrid"><span>Grade</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center gap-2" for="showMeasures"><input class="form-check-input mt-0" type="checkbox" id="showMeasures"><span>Medidas dos objetos</span></label></li>
+                            <li><label class="dropdown-item d-flex align-items-center gap-2" for="showPlantMeasures"><input class="form-check-input mt-0" type="checkbox" id="showPlantMeasures" checked><span>Medidas da planta</span></label></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><button class="dropdown-item" id="menuZoomIn"><i class="fas fa-plus me-2"></i>Zoom</button></li>
                             <li><button class="dropdown-item" id="menuZoomOut"><i class="fas fa-minus me-2"></i>Zoom</button></li>
@@ -121,6 +122,10 @@
             </div>
         </div>
     </nav>
+    <div id="deleteModeMessage" class="delete-mode-message" role="status" aria-live="polite" aria-hidden="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v5M14 11v5M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+        <span>Clique sobre os objetos para deletá-los</span>
+    </div>
     <div class="drawer p-3" id="drawer">
         <h3>Adicionar Item</h3>
         <div class="accordion" id="addItemAccordion">
@@ -202,7 +207,7 @@
         <button id="rotateRightBtn" type="button" title="+45°" aria-label="Rotação horária +45°"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5h5v5M19.5 9A8 8 0 1 0 17.2 17.5"/></svg></button>
         <button id="floatingDuplicateBtn" type="button" title="Duplicar" aria-label="Duplicar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>
         <button id="floatingSaveBtn" type="button" title="Salvar item" aria-label="Salvar item"><svg viewBox="0 0 640 640" aria-hidden="true"><path d="M160 144C151.2 144 144 151.2 144 160L144 480C144 488.8 151.2 496 160 496L480 496C488.8 496 496 488.8 496 480L496 237.3C496 233.1 494.3 229 491.3 226L416 150.6L416 240C416 257.7 401.7 272 384 272L224 272C206.3 272 192 257.7 192 240L192 144L160 144zM240 144L240 224L368 224L368 144L240 144zM96 160C96 124.7 124.7 96 160 96L402.7 96C419.7 96 436 102.7 448 114.7L525.3 192C537.3 204 544 220.3 544 237.3L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 160zM256 384C256 348.7 284.7 320 320 320C355.3 320 384 348.7 384 384C384 419.3 355.3 448 320 448C284.7 448 256 419.3 256 384z"/></svg></button>
-        <button id="floatingLockBtn" type="button" title="Travar grupo" aria-label="Travar grupo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v1"/></svg></button>
+        <button id="floatingLockBtn" type="button" title="Travar grupo" aria-label="Travar grupo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.4-2.1"/></svg></button>
         <button id="floatingDeleteBtn" class="delete-action" type="button" title="Excluir" aria-label="Excluir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v5M14 11v5M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
     </div>
     <div class="sidebar" id="sidebar">

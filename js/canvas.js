@@ -4,6 +4,12 @@ import { updateSeatCounter } from './layout.js';
 
 export const backgroundImage = new Image();
 backgroundImage.src = 'images/plantaBaixa.png';
+
+export function updateBackgroundImage() {
+    backgroundImage.src = state.showPlantMeasures
+        ? 'images/plantaBaixa.png'
+        : 'images/plantaBaixaSemMedidas.png';
+}
 backgroundImage.onload = () => resizeCanvas();
 
 export function resizeCanvas() {
@@ -25,6 +31,29 @@ export function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
+
+function drawTableMeasure(table) {
+    const width = table.width || (table.radius ? table.radius * 2 : 0);
+    const height = table.height || (table.radius ? table.radius * 2 : 0);
+    if (!width || !height) return;
+    const isRound = table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea';
+    const measureText = isRound ? `Ø ${width} cm` : `${width} x ${height} cm`;
+
+    let textY = table.y;
+    if (table.type === 'customCircleArea' && table.isHalfCircle) {
+        const offset = (4 * table.radius) / (3 * Math.PI);
+        const angleRad = table.angle * Math.PI / 180;
+        textY -= offset * Math.cos(angleRad);
+    }
+
+    ctx.save();
+    ctx.fillStyle = '#111';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(measureText, table.x, textY + (table.fontSize || 0) / 2 + 8);
+    ctx.restore();
+}
 
 export function draw() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -88,20 +117,10 @@ export function draw() {
             ctx.restore();
         });
 
-    if (state.showMeasures && state.selectedTable) {
-        const table = state.selectedTable;
-        const width = table.width || (table.radius ? table.radius * 2 : 0);
-        const height = table.height || (table.radius ? table.radius * 2 : 0);
-        if (width && height) {
-            const labelOffsetY = height / 2 + 18;
-            ctx.save();
-            ctx.translate(table.x, table.y);
-            ctx.fillStyle = '#111';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${width} x ${height} cm`, 0, labelOffsetY);
-            ctx.restore();
-        }
+    if (state.showMeasures) {
+        state.tables
+            .filter(table => table.type !== 'label')
+            .forEach(drawTableMeasure);
     }
 
     if (state.alignmentLine) {

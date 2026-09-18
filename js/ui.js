@@ -1,11 +1,11 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
-import { draw, getCanvasCoords } from './canvas.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
+import { draw, getCanvasCoords, updateBackgroundImage } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
 import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
 import { Table } from './table.js';
-import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
+import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, showPlantMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
 
 const tooltip = document.createElement('div');
 tooltip.className = 'popover-tooltip';
@@ -468,7 +468,7 @@ function updateObjectToolbarPosition() {
     const rotatedHalfHeight = Math.abs(Math.cos(angle) * halfHeight) + Math.abs(Math.sin(angle) * halfWidth);
     const screenY = rect.top + state.canvasOffsetY + (table.y - rotatedHalfHeight) * scale;
     objectToolbar.style.left = `${screenX}px`;
-    objectToolbar.style.top = `${Math.max(66, screenY - 8)}px`;
+    objectToolbar.style.top = `${Math.max(66, screenY - 25)}px`;
     objectToolbar.classList.add('show');
 }
 
@@ -478,7 +478,7 @@ function updateFloatingLockIcon() {
     floatingLockBtn.setAttribute('aria-label', state.groupLocked ? 'Destravar grupo' : 'Travar grupo');
     floatingLockBtn.innerHTML = state.groupLocked
         ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
-        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v1"/></svg>';
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.4-2.1"/></svg>';
 }
 
 function hideObjectToolbar() {
@@ -1128,6 +1128,10 @@ if (toggleDrawerBtn) toggleDrawerBtn.addEventListener('click', () => {
 
 if (selectModeBtn) selectModeBtn.addEventListener('click', () => {
     state.mode = 'select';
+    if (deleteModeMessage) {
+        deleteModeMessage.classList.remove('show');
+        deleteModeMessage.setAttribute('aria-hidden', 'true');
+    }
     state.selectedTables = [];
     state.groupLocked = false;
     floatingDeleteBtn.style.display = '';
@@ -1138,6 +1142,10 @@ if (selectModeBtn) selectModeBtn.addEventListener('click', () => {
 
 if (multiSelectModeBtn) multiSelectModeBtn.addEventListener('click', () => {
     state.mode = 'multi';
+    if (deleteModeMessage) {
+        deleteModeMessage.classList.remove('show');
+        deleteModeMessage.setAttribute('aria-hidden', 'true');
+    }
     state.selectedTable = null;
     sidebar.classList.remove('show');
     floatingDeleteBtn.style.display = 'none';
@@ -1148,6 +1156,10 @@ if (multiSelectModeBtn) multiSelectModeBtn.addEventListener('click', () => {
 
 if (deleteModeBtn) deleteModeBtn.addEventListener('click', () => {
     state.mode = 'delete';
+    if (deleteModeMessage) {
+        deleteModeMessage.classList.add('show');
+        deleteModeMessage.setAttribute('aria-hidden', 'false');
+    }
     state.selectedTables = [];
     state.groupLocked = false;
     hideObjectToolbar();
@@ -1171,7 +1183,7 @@ function findTableAt(x, y) {
 
 function updateMultiToolbarPosition() {
     if (!objectToolbar || !state.selectedTables.length) return;
-    floatingDeleteBtn.style.display = 'none';
+    floatingDeleteBtn.style.display = '';
     floatingLockBtn.style.display = '';
     updateFloatingLockIcon();
     const rect = canvas.getBoundingClientRect();
@@ -1179,7 +1191,7 @@ function updateMultiToolbarPosition() {
     center.x /= state.selectedTables.length;
     center.y /= state.selectedTables.length;
     objectToolbar.style.left = `${rect.left + state.canvasOffsetX + center.x * state.canvasScale}px`;
-    objectToolbar.style.top = `${Math.max(66, rect.top + state.canvasOffsetY + center.y * state.canvasScale - 80)}px`;
+    objectToolbar.style.top = `${Math.max(66, rect.top + state.canvasOffsetY + center.y * state.canvasScale - 92)}px`;
     objectToolbar.classList.add('show');
 }
 
@@ -1302,18 +1314,17 @@ if (zoomInBtn) zoomInBtn.addEventListener('click', () => zoomFromCenter(1));
 if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => zoomFromCenter(-1));
 if (menuZoomInBtn) menuZoomInBtn.addEventListener('click', () => zoomFromCenter(1));
 if (menuZoomOutBtn) menuZoomOutBtn.addEventListener('click', () => zoomFromCenter(-1));
-if (showGridBtn) showGridBtn.addEventListener('click', () => {
-    state.showGrid = !state.showGrid;
-    showGridBtn.innerHTML = state.showGrid
-        ? '<i class="fas fa-border-all me-2"></i>Ocultar grade'
-        : '<i class="fas fa-border-all me-2"></i>Mostrar grade';
+if (showGridBtn) showGridBtn.addEventListener('change', () => {
+    state.showGrid = showGridBtn.checked;
     draw();
 });
-if (showMeasuresBtn) showMeasuresBtn.addEventListener('click', () => {
-    state.showMeasures = !state.showMeasures;
-    showMeasuresBtn.innerHTML = state.showMeasures
-        ? '<i class="fas fa-ruler me-2"></i>Ocultar medidas'
-        : '<i class="fas fa-ruler me-2"></i>Mostrar medidas';
+if (showMeasuresBtn) showMeasuresBtn.addEventListener('change', () => {
+    state.showMeasures = showMeasuresBtn.checked;
+    draw();
+});
+if (showPlantMeasuresBtn) showPlantMeasuresBtn.addEventListener('change', () => {
+    state.showPlantMeasures = showPlantMeasuresBtn.checked;
+    updateBackgroundImage();
     draw();
 });
 
@@ -1667,19 +1678,24 @@ duplicateBtn.addEventListener('click', () => {
     draw();
 });
 
-if (deleteBtn) deleteBtn.addEventListener('click', () => {
-    if (!state.selectedTable) {
-        return;
-    }
+function deleteSelectedItems() {
+    const selectedItems = state.selectedTables.length
+        ? state.selectedTables
+        : state.selectedTable ? [state.selectedTable] : [];
+    if (!selectedItems.length) return;
 
     recordHistory();
-    const index = state.tables.indexOf(state.selectedTable);
-    if (index > -1) {
-        state.tables.splice(index, 1);
-    }
+    const selectedSet = new Set(selectedItems);
+    state.tables = state.tables.filter(table => !selectedSet.has(table));
+    state.selectedTables = [];
+    state.selectedTable = null;
+    state.groupLocked = false;
     selectTable(null);
+    hideObjectToolbar();
     draw();
-});
+}
+
+if (deleteBtn) deleteBtn.addEventListener('click', deleteSelectedItems);
 
 function rotateSelectedTable(step) {
     if (!state.selectedTable) return;
@@ -1707,7 +1723,7 @@ if (floatingLockBtn) floatingLockBtn.addEventListener('click', () => {
     }
     updateFloatingLockIcon();
 });
-if (floatingDeleteBtn) floatingDeleteBtn.addEventListener('click', () => deleteBtn && deleteBtn.click());
+if (floatingDeleteBtn) floatingDeleteBtn.addEventListener('click', deleteSelectedItems);
 if (toolbarUndoBtn) toolbarUndoBtn.addEventListener('click', undo);
 if (toolbarRedoBtn) toolbarRedoBtn.addEventListener('click', redo);
 if (saveItemBtn) saveItemBtn.addEventListener('click', saveSelectedItem);
