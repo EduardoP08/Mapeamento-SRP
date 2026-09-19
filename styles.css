@@ -1,8 +1,13 @@
+:root {
+    --navbar-height: 60px;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    max-width: 100vw;
 }
 
 /* Navbar fixa e sem overflow */
@@ -289,10 +294,10 @@ body {
 
 .drawer {
     position: fixed;
-    top: 60px;
+    top: var(--navbar-height);
     left: 0;
     width: 220px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - var(--navbar-height));
     background-color: #fafafa;
     border-right: 1px solid #e6e6e6;
     transform: translateX(-100%);
@@ -457,12 +462,15 @@ body {
 
 canvas {
     position: absolute;
-    top: 60px;
+    top: var(--navbar-height);
     left: 0;
-    width: auto;
-    height: auto;
+    display: block;
+    max-width: 100vw;
+    max-height: calc(100vh - var(--navbar-height));
     background-color: rgb(247, 247, 247);
     cursor: crosshair;
+    touch-action: none;
+    user-select: none;
 }
 
 .object-toolbar {
@@ -598,10 +606,10 @@ canvas {
 
 .sidebar {
     position: fixed;
-    top: 60px;
+    top: var(--navbar-height);
     right: 0;
     width: 320px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - var(--navbar-height));
     padding: 16px;
     background-color: #fff;
     border-left: 1px solid #ccc;
@@ -1372,16 +1380,304 @@ canvas {
     }
     
     .drawer {
-        width: 85% !important;
+        width: 25vw !important;
+        max-width: 25vw;
+        padding: 8px;
     }
     
     .sidebar {
-        width: 85% !important;
+        width: 25vw !important;
+        max-width: 25vw;
+        padding: 8px;
     }
     
     .modal-content {
         width: 90%;
         max-width: 420px;
+    }
+}
+
+/* Smartphones em orientacao paisagem: preserve area de trabalho */
+@media (max-width: 768px) and (orientation: landscape) {
+    .drawer {
+        width: 25vw !important;
+        max-width: 25vw;
+    }
+
+    .sidebar {
+        width: 25vw !important;
+        max-width: 25vw;
+    }
+}
+
+/* Paineis compactos para toda a faixa mobile */
+@media (max-width: 1024px) and (pointer: coarse) {
+    .drawer,
+    .sidebar {
+        border-radius: 0;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+        overscroll-behavior: contain;
+    }
+
+    .drawer {
+        padding: 8px;
+    }
+
+    .drawer h3,
+    .sidebar h2 {
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .drawer .accordion-button {
+        min-height: 30px;
+        padding: 5px 3px;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .drawer .accordion-body {
+        padding: 4px 2px !important;
+    }
+
+    .drawer .accordion-body .btn {
+        min-height: 28px;
+        padding: 5px 3px;
+        font-size: 0.62rem;
+        line-height: 1.15;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .drawer .accordion-body .btn i,
+    .drawer .saved-item-button i {
+        display: none;
+    }
+
+    .saved-item-row {
+        height: 28px;
+    }
+
+    .saved-item-button,
+    .saved-item-edit {
+        height: 28px;
+        min-height: 28px;
+        padding: 4px 3px;
+        font-size: 0.6rem;
+    }
+
+    .saved-item-edit {
+        min-width: 24px;
+        width: 24px;
+    }
+
+    .sidebar {
+        padding: 8px;
+    }
+
+    .customize-title-row {
+        gap: 4px;
+    }
+
+    .customize-title-row h2 {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .customize-title-row button {
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .customize-accordion {
+        --bs-accordion-btn-padding-x: 5px;
+        --bs-accordion-btn-padding-y: 5px;
+        --bs-accordion-body-padding-x: 5px;
+        --bs-accordion-body-padding-y: 6px;
+    }
+
+    .customize-accordion .accordion-button {
+        min-height: 28px;
+        font-size: 0.68rem;
+        line-height: 1.15;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .customize-accordion .accordion-body {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .customize-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    .sidebar label,
+    .sidebar .customize-accordion label,
+    .sidebar .customize-accordion .field-group label,
+    .sidebar .customize-accordion .color-field label {
+        max-width: 100%;
+        margin-bottom: 2px;
+        font-size: 0.62rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .sidebar input,
+    .sidebar select,
+    .sidebar .customize-accordion input[type="number"],
+    .sidebar .customize-accordion input[type="text"] {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        height: 25px;
+        padding: 3px 4px;
+        font-size: 0.65rem;
+        border-radius: 4px;
+    }
+
+    .sidebar .stepper {
+        grid-template-columns: 19px minmax(0, 1fr) 19px;
+        gap: 2px;
+    }
+
+    .sidebar .stepper button {
+        min-width: 0;
+        padding: 0 1px;
+        font-size: 0.58rem;
+        line-height: 1;
+        overflow: hidden;
+    }
+
+    .sidebar #rotationField .stepper {
+        grid-template-columns: 24px minmax(0, 1fr) 24px;
+    }
+
+    .sidebar .color-row {
+        grid-template-columns: 22px minmax(0, 1fr);
+        gap: 3px;
+    }
+
+    .sidebar .color-row input[type="color"] {
+        width: 22px;
+        height: 22px;
+        padding: 1px;
+    }
+
+    .sidebar .color-swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        max-width: 100%;
+    }
+
+    .sidebar .color-swatches button {
+        flex: 0 0 13px;
+        width: 13px;
+        height: 13px;
+    }
+
+    .sidebar .customize-accordion .checkbox-inline {
+        align-items: flex-start;
+        font-size: 0.62rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .sidebar .customize-actions {
+        gap: 3px;
+    }
+
+    .sidebar .customize-actions #duplicate,
+    .sidebar .customize-actions #delete {
+        min-width: 0;
+        width: 50%;
+        padding: 5px 2px;
+        font-size: 0.62rem;
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 576px) {
+    .drawer,
+    .sidebar {
+        width: 25vw !important;
+        max-width: 25vw;
+        padding: 6px;
+        overflow-x: hidden;
+    }
+
+    .drawer h3,
+    .sidebar h2 {
+        font-size: 0.9rem;
+        overflow-wrap: anywhere;
+    }
+
+    .drawer .accordion-button,
+    .drawer .accordion-body,
+    .sidebar .accordion-body,
+    .sidebar .field-group,
+    .sidebar .color-field {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .drawer .accordion-button,
+    .drawer .accordion-body .btn,
+    .sidebar label,
+    .sidebar .checkbox-inline span {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .sidebar input,
+    .sidebar select,
+    .sidebar .customize-accordion input[type="number"],
+    .sidebar .customize-accordion input[type="text"] {
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        padding: 5px 4px;
+        font-size: 0.7rem;
+    }
+
+    .sidebar .stepper {
+        grid-template-columns: 18px minmax(0, 1fr) 18px;
+        gap: 2px;
+    }
+
+    .sidebar .stepper button {
+        min-width: 0;
+        font-size: 0.7rem;
+    }
+
+    .sidebar .color-row {
+        grid-template-columns: 22px minmax(0, 1fr);
+        gap: 3px;
+    }
+
+    .sidebar .color-row input[type="color"] {
+        width: 22px;
+        height: 22px;
+        padding: 1px;
+    }
+
+    .sidebar .color-swatches {
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+
+    .sidebar .color-swatches button {
+        width: 14px;
+        height: 14px;
     }
 }
 
@@ -1400,6 +1696,25 @@ canvas {
     .sidebar {
         width: 80% !important;
         max-width: 350px;
+    }
+}
+
+/* Smartphones grandes e celulares em paisagem */
+@media (min-width: 769px) and (max-width: 1024px) and (pointer: coarse) {
+    .drawer,
+    .sidebar {
+        width: 25vw !important;
+        max-width: 25vw;
+        padding: 8px;
+        overflow-x: hidden;
+    }
+}
+
+/* O painel de customizacao em coluna usa ainda menos area no mobile */
+@media (max-width: 1024px) and (pointer: coarse) {
+    .sidebar {
+        width: 20vw !important;
+        max-width: 20vw;
     }
 }
 

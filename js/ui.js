@@ -5,7 +5,7 @@ import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js'
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
 import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
 import { Table } from './table.js';
-import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, showPlantMeasuresBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
+import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, showPlantMeasuresBtn, showCustomizeMenuBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
 
 const tooltip = document.createElement('div');
 tooltip.className = 'popover-tooltip';
@@ -676,7 +676,7 @@ async function deleteSelectedSavedItem() {
 export function selectTable(table, showToolbar = true) {
     state.selectedTable = table;
     if (table) {
-        sidebar.classList.add('show');
+        if (showCustomizeMenuBtn?.checked !== false) sidebar.classList.add('show');
         const customizeTitle = document.getElementById('customizeTitle');
         if (customizeTitle) customizeTitle.textContent = tableTypeLabels[table.type] || 'Item';
         nameInput.value = table.name;
@@ -907,7 +907,9 @@ async function loadMapsList() {
 }
 
 if (canvas) {
-    canvas.addEventListener('mousedown', (e) => {
+    canvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        canvas.setPointerCapture(e.pointerId);
         const { x, y } = getCanvasCoords(e);
         temporaryShiftSelection = state.mode === 'select' && e.shiftKey;
         const clickedTable = findTableAt(x, y);
@@ -1017,7 +1019,8 @@ if (canvas) {
         }
     });
 
-    canvas.addEventListener('mousemove', (e) => {
+    canvas.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'mouse') e.preventDefault();
         if (multiSelectionStart) {
             const { x, y } = getCanvasCoords(e);
             state.multiSelectionRect = {
@@ -1060,7 +1063,10 @@ if (canvas) {
         }
     });
 
-    canvas.addEventListener('mouseup', () => {
+    const finishCanvasInteraction = (e) => {
+        if (e?.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
+            canvas.releasePointerCapture(e.pointerId);
+        }
         if (multiSelectionStart) {
             if (state.multiSelectionRect.width > 4 && state.multiSelectionRect.height > 4) {
                 selectTablesInRect(state.multiSelectionRect);
@@ -1091,9 +1097,13 @@ if (canvas) {
             updateObjectToolbarPosition();
         }
         draw();
-    });
+    };
 
-    canvas.addEventListener('mouseleave', () => {
+    canvas.addEventListener('pointerup', finishCanvasInteraction);
+    canvas.addEventListener('pointercancel', finishCanvasInteraction);
+
+    canvas.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'mouse' || canvas.hasPointerCapture(e.pointerId)) return;
         multiSelectionStart = null;
         state.multiSelectionRect = null;
         temporaryShiftSelection = false;
@@ -1326,6 +1336,15 @@ if (showPlantMeasuresBtn) showPlantMeasuresBtn.addEventListener('change', () => 
     state.showPlantMeasures = showPlantMeasuresBtn.checked;
     updateBackgroundImage();
     draw();
+});
+if (showCustomizeMenuBtn) showCustomizeMenuBtn.addEventListener('change', () => {
+    if (showCustomizeMenuBtn.checked && state.selectedTable) {
+        sidebar.classList.add('show');
+    } else {
+        sidebar.classList.remove('show');
+        hideObjectToolbar();
+    }
+    updateZoomControlsPosition();
 });
 
 function setInitialZoom() {

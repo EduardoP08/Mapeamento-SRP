@@ -32,6 +32,7 @@ export const menuZoomOutBtn = document.getElementById('menuZoomOut');
 export const showGridBtn = document.getElementById('showGrid');
 export const showMeasuresBtn = document.getElementById('showMeasures');
 export const showPlantMeasuresBtn = document.getElementById('showPlantMeasures');
+export const showCustomizeMenuBtn = document.getElementById('showCustomizeMenu');
 export const loginBtn = document.getElementById('loginBtn');
 export const userDisplay = document.getElementById('userDisplay');
 export const userName = document.getElementById('userName');

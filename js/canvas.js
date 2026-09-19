@@ -13,20 +13,17 @@ export function updateBackgroundImage() {
 backgroundImage.onload = () => resizeCanvas();
 
 export function resizeCanvas() {
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight - 60;
+    const navbar = document.querySelector('.navbar');
+    const top = navbar ? navbar.getBoundingClientRect().bottom : 60;
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight - top);
 
-    if (backgroundImage.complete && backgroundImage.naturalWidth) {
-        canvas.width = Math.max(backgroundImage.naturalWidth, screenWidth);
-        canvas.height = Math.max(backgroundImage.naturalHeight, screenHeight);
-        canvas.style.width = `${canvas.width}px`;
-        canvas.style.height = `${canvas.height}px`;
-    } else {
-        canvas.width = screenWidth;
-        canvas.height = screenHeight;
-        canvas.style.width = `${canvas.width}px`;
-        canvas.style.height = `${canvas.height}px`;
-    }
+    document.documentElement.style.setProperty('--navbar-height', `${top}px`);
+    canvas.style.top = `${top}px`;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.width = width;
+    canvas.height = height;
     draw();
 }
 
