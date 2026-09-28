@@ -29,7 +29,7 @@ export function resizeCanvas() {
 
 window.addEventListener('resize', resizeCanvas);
 
-function drawTableMeasure(table) {
+function drawTableMeasure(table, targetCtx = ctx) {
     const width = table.width || (table.radius ? table.radius * 2 : 0);
     const height = table.height || (table.radius ? table.radius * 2 : 0);
     if (!width || !height) return;
@@ -43,112 +43,153 @@ function drawTableMeasure(table) {
         textY -= offset * Math.cos(angleRad);
     }
 
-    ctx.save();
-    ctx.fillStyle = '#111';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(measureText, table.x, textY + (table.fontSize || 0) / 2 + 8);
-    ctx.restore();
+    targetCtx.save();
+    targetCtx.fillStyle = '#111';
+    targetCtx.font = '14px Arial';
+    targetCtx.textAlign = 'center';
+    targetCtx.textBaseline = 'top';
+    targetCtx.fillText(measureText, table.x, textY + (table.fontSize || 0) / 2 + 8);
+    targetCtx.restore();
 }
 
-export function draw() {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.setTransform(state.canvasScale, 0, 0, state.canvasScale, state.canvasOffsetX, state.canvasOffsetY);
+function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offsetY, includeOverlays }) {
+    targetCtx.save();
+    targetCtx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
     if (backgroundImage.complete && backgroundImage.naturalWidth) {
-        ctx.drawImage(backgroundImage, 0, 0);
+        targetCtx.drawImage(backgroundImage, 0, 0);
     }
 
     if (state.showGrid) {
-        ctx.strokeStyle = 'rgba(90, 90, 90, 0.2)';
-        ctx.lineWidth = 1 / state.canvasScale;
-        for (let x = 0; x <= canvas.width / state.canvasScale; x += 50) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height / state.canvasScale);
-            ctx.stroke();
+        targetCtx.strokeStyle = 'rgba(90, 90, 90, 0.2)';
+        targetCtx.lineWidth = 1 / scale;
+        for (let x = 0; x <= targetWidth / scale; x += 50) {
+            targetCtx.beginPath();
+            targetCtx.moveTo(x, 0);
+            targetCtx.lineTo(x, targetHeight / scale);
+            targetCtx.stroke();
         }
-        for (let y = 0; y <= canvas.height / state.canvasScale; y += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width / state.canvasScale, y);
-            ctx.stroke();
+        for (let y = 0; y <= targetHeight / scale; y += 50) {
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, y);
+            targetCtx.lineTo(targetWidth / scale, y);
+            targetCtx.stroke();
         }
     }
     
     // Desenhar em camadas: áreas customizadas (fundo) → mesas → assentos → etiquetas (frente)
     // Camada 1: Áreas customizadas
     state.tables.filter(t => t.type === 'customArea' || t.type === 'customCircleArea')
-        .forEach(table => table.draw(ctx, table === state.selectedTable || state.selectedTables.includes(table), table === state.hoveredTable));
+        .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
     // Camada 2: Mesas
     state.tables.filter(t => t.type === 'square' || t.type === 'round')
-        .forEach(table => table.draw(ctx, table === state.selectedTable || state.selectedTables.includes(table), table === state.hoveredTable));
+        .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
     // Camada 3: Assentos
     state.tables.filter(t => t.type === 'seat' || t.type === 'roundSeat')
-        .forEach(table => table.draw(ctx, table === state.selectedTable || state.selectedTables.includes(table), table === state.hoveredTable));
+        .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
     // Camada 4: Etiquetas (frente)
     state.tables.filter(t => t.type === 'label')
         .forEach(table => {
-            const isHovered = table === state.hoveredTable;
-            ctx.save();
-            ctx.translate(table.x, table.y);
-            ctx.rotate(table.angle * Math.PI / 180);
-            ctx.fillStyle = table.nameColor;
-            ctx.font = `${table.fontSize}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(table.name, 0, 0);
-            if (table === state.selectedTable || state.selectedTables.includes(table) || isHovered) {
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 4;
+            targetCtx.save();
+            targetCtx.translate(table.x, table.y);
+            targetCtx.rotate(table.angle * Math.PI / 180);
+            targetCtx.fillStyle = table.nameColor;
+            targetCtx.font = `${table.fontSize}px Arial`;
+            targetCtx.textAlign = 'center';
+            targetCtx.textBaseline = 'middle';
+            targetCtx.fillText(table.name, 0, 0);
+            if (includeOverlays && table === state.selectedTable) {
+                targetCtx.strokeStyle = '#000';
+                targetCtx.lineWidth = 4;
                 const textWidth = table.name.length * (table.fontSize * 0.6);
                 const textHeight = table.fontSize;
-                ctx.strokeRect(-textWidth / 2 - 10, -textHeight / 2 - 5, textWidth + 20, textHeight + 10);
+                targetCtx.strokeRect(-textWidth / 2 - 10, -textHeight / 2 - 5, textWidth + 20, textHeight + 10);
             }
-            ctx.restore();
+            targetCtx.restore();
         });
 
     if (state.showMeasures) {
         state.tables
             .filter(table => table.type !== 'label')
-            .forEach(drawTableMeasure);
+            .forEach(table => drawTableMeasure(table, targetCtx));
     }
 
-    if (state.alignmentLine) {
-        ctx.strokeStyle = '#00a2ff';
-        ctx.globalAlpha = 0.95;
-        ctx.lineWidth = 2 / state.canvasScale;
-        ctx.setLineDash([8 / state.canvasScale, 6 / state.canvasScale]);
+    if (includeOverlays && state.alignmentLine) {
+        targetCtx.strokeStyle = '#00a2ff';
+        targetCtx.globalAlpha = 0.95;
+        targetCtx.lineWidth = 2 / scale;
+        targetCtx.setLineDash([8 / scale, 6 / scale]);
         const alignmentLines = Array.isArray(state.alignmentLine)
             ? state.alignmentLine
             : [state.alignmentLine];
         alignmentLines.forEach(line => {
-            ctx.beginPath();
-            ctx.moveTo(line.x1, line.y1);
-            ctx.lineTo(line.x2, line.y2);
-            ctx.stroke();
+            targetCtx.beginPath();
+            targetCtx.moveTo(line.x1, line.y1);
+            targetCtx.lineTo(line.x2, line.y2);
+            targetCtx.stroke();
         });
-        ctx.setLineDash([]);
-        ctx.globalAlpha = 1;
+        targetCtx.setLineDash([]);
+        targetCtx.globalAlpha = 1;
     }
-    if (state.multiSelectionRect) {
+    if (includeOverlays && state.multiSelectionRect) {
         const selection = state.multiSelectionRect;
-        ctx.strokeStyle = '#1976d2';
-        ctx.fillStyle = 'rgba(25, 118, 210, 0.12)';
-        ctx.lineWidth = 2 / state.canvasScale;
-        ctx.setLineDash([8 / state.canvasScale, 5 / state.canvasScale]);
-        ctx.fillRect(selection.x, selection.y, selection.width, selection.height);
-        ctx.strokeRect(selection.x, selection.y, selection.width, selection.height);
-        ctx.setLineDash([]);
+        targetCtx.strokeStyle = '#1976d2';
+        targetCtx.fillStyle = 'rgba(25, 118, 210, 0.12)';
+        targetCtx.lineWidth = 2 / scale;
+        targetCtx.setLineDash([8 / scale, 5 / scale]);
+        targetCtx.fillRect(selection.x, selection.y, selection.width, selection.height);
+        targetCtx.strokeRect(selection.x, selection.y, selection.width, selection.height);
+        targetCtx.setLineDash([]);
     }
-    ctx.restore();
+    targetCtx.restore();
+}
+
+export function draw() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawScene(ctx, canvas.width, canvas.height, {
+        scale: state.canvasScale,
+        offsetX: state.canvasOffsetX,
+        offsetY: state.canvasOffsetY,
+        includeOverlays: true
+    });
     updateSeatCounter();
+}
+
+export function createExportCanvas() {
+    const backgroundWidth = backgroundImage.naturalWidth || canvas.width;
+    const backgroundHeight = backgroundImage.naturalHeight || canvas.height;
+    const bounds = { left: 0, top: 0, right: backgroundWidth, bottom: backgroundHeight };
+
+    state.tables.forEach(table => {
+        let halfWidth = table.width ? table.width / 2 : (table.radius || 0);
+        let halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+        if (table.type === 'label') {
+            halfWidth = Math.max(halfWidth, (String(table.name || '').length * (table.fontSize || 0) * 0.6 + 20) / 2);
+            halfHeight = Math.max(halfHeight, ((table.fontSize || 0) + 10) / 2);
+        }
+        const angle = (table.angle || 0) * Math.PI / 180;
+        const rotatedWidth = Math.abs(Math.cos(angle) * halfWidth) + Math.abs(Math.sin(angle) * halfHeight);
+        const rotatedHeight = Math.abs(Math.sin(angle) * halfWidth) + Math.abs(Math.cos(angle) * halfHeight);
+        const margin = Math.max(60, (table.fontSize || 0) + 20);
+        bounds.left = Math.min(bounds.left, table.x - rotatedWidth - margin);
+        bounds.top = Math.min(bounds.top, table.y - rotatedHeight - margin);
+        bounds.right = Math.max(bounds.right, table.x + rotatedWidth + margin);
+        bounds.bottom = Math.max(bounds.bottom, table.y + rotatedHeight + margin);
+    });
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = Math.max(1, Math.ceil(bounds.right - bounds.left));
+    exportCanvas.height = Math.max(1, Math.ceil(bounds.bottom - bounds.top));
+    drawScene(exportCanvas.getContext('2d'), exportCanvas.width, exportCanvas.height, {
+        scale: 1,
+        offsetX: -bounds.left,
+        offsetY: -bounds.top,
+        includeOverlays: false
+    });
+    return exportCanvas;
 }
 
 export function getCanvasCoords(event) {

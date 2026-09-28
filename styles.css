@@ -664,6 +664,10 @@ canvas {
     gap: 6px 8px;
 }
 
+#dimensionsSection.round-layout #radiusField {
+    grid-column: 1 / -1;
+}
+
 .field-group,
 .color-field {
     min-width: 0;

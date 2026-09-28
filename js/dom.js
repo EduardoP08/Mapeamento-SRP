@@ -16,6 +16,7 @@ export const saveAsBtn = document.getElementById('saveAsBtn');
 export const importBtn = document.getElementById('importBtn');
 export const exportPngBtn = document.getElementById('exportPngBtn');
 export const exportJpgBtn = document.getElementById('exportJpgBtn');
+export const exportPdfBtn = document.getElementById('exportPdfBtn');
 export const exportJsonBtn = document.getElementById('exportJsonBtn');
 export const editBtn = document.getElementById('editBtn');
 export const viewBtn = document.getElementById('viewBtn');

@@ -1,6 +1,6 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter } from './dom.js';
-import { draw, getCanvasCoords, updateBackgroundImage } from './canvas.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter, exportPdfBtn } from './dom.js';
+import { draw, getCanvasCoords, updateBackgroundImage, createExportCanvas } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
 import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
@@ -255,12 +255,48 @@ function downloadJson() {
 }
 
 function downloadCanvasPng() {
+    const exportCanvas = createExportCanvas();
     const link = document.createElement('a');
     const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
     const safe = base.replace(/[<>:\\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
     link.download = `${safe}.png`;
-    link.href = canvas.toDataURL();
+    link.href = exportCanvas.toDataURL('image/png');
     link.click();
+}
+
+function downloadCanvasJpg() {
+    const exportCanvas = createExportCanvas();
+    const link = document.createElement('a');
+    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
+    const safe = base.replace(/[<>:\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
+    link.download = `${safe}.jpg`;
+    link.href = exportCanvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+}
+
+function downloadCanvasPdf() {
+    const jsPdf = window.jspdf?.jsPDF;
+    if (!jsPdf) {
+        alert('Não foi possível carregar o exportador de PDF. Verifique sua conexão e tente novamente.');
+        return;
+    }
+
+    const exportCanvas = createExportCanvas();
+    const pdf = new jsPdf({ orientation: exportCanvas.width >= exportCanvas.height ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    const margin = 10;
+    const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+    const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+    const canvasRatio = exportCanvas.width / exportCanvas.height;
+    const pageRatio = pageWidth / pageHeight;
+    const imageWidth = canvasRatio > pageRatio ? pageWidth : pageHeight * canvasRatio;
+    const imageHeight = canvasRatio > pageRatio ? pageWidth / canvasRatio : pageHeight;
+    const x = (pdf.internal.pageSize.getWidth() - imageWidth) / 2;
+    const y = (pdf.internal.pageSize.getHeight() - imageHeight) / 2;
+    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
+    const safe = base.replace(/[<>:\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
+
+    pdf.addImage(exportCanvas.toDataURL('image/png'), 'PNG', x, y, imageWidth, imageHeight);
+    pdf.save(`${safe}.pdf`);
 }
 
 function handleFileInputChange(event) {
@@ -289,6 +325,7 @@ function handleFileInputChange(event) {
 }
 
 function updateSizeFieldsVisibility(table) {
+    const dimensionsSection = document.getElementById('dimensionsSection');
     const setVisibility = (id, visible) => {
         const element = document.getElementById(id);
         if (element) element.style.display = visible ? '' : 'none';
@@ -299,6 +336,7 @@ function updateSizeFieldsVisibility(table) {
     };
 
     if (!table) {
+        dimensionsSection?.classList.remove('round-layout');
         widthLabel.style.display = 'none';
         widthInput.style.display = 'none';
         heightLabel.style.display = 'none';
@@ -316,6 +354,7 @@ function updateSizeFieldsVisibility(table) {
     }
 
     if (table.type === 'label') {
+        dimensionsSection?.classList.remove('round-layout');
         // Para labels, mostrar apenas: nome, fontSize, nameColor, angle
         widthLabel.style.display = 'none';
         widthInput.style.display = 'none';
@@ -339,6 +378,7 @@ function updateSizeFieldsVisibility(table) {
         setInputGroupVisibility(colorInput, false);
         setInputGroupVisibility(seatColorInput, false);
     } else if (table.type === 'square' || table.type === 'seat' || table.type === 'customArea') {
+        dimensionsSection?.classList.remove('round-layout');
         widthLabel.style.display = 'block';
         widthInput.style.display = 'block';
         heightLabel.style.display = 'block';
@@ -362,6 +402,7 @@ function updateSizeFieldsVisibility(table) {
         setInputGroupVisibility(seatColorInput, table.type === 'square');
         updateMaxSeats(table);
     } else if (table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea') {
+        dimensionsSection?.classList.add('round-layout');
         widthLabel.style.display = 'none';
         heightLabel.style.display = 'none';
         widthInput.style.display = 'none';
@@ -385,6 +426,7 @@ function updateSizeFieldsVisibility(table) {
         setInputGroupVisibility(seatColorInput, table.type === 'round');
         updateMaxSeats(table);
     } else {
+        dimensionsSection?.classList.remove('round-layout');
         widthLabel.style.display = 'none';
         heightLabel.style.display = 'none';
         widthInput.style.display = 'none';
@@ -1415,14 +1457,8 @@ if (saveBtn) saveBtn.addEventListener('click', () => { saveMode = 'cloud'; showC
 if (saveAsBtn) saveAsBtn.addEventListener('click', () => { saveMode = 'cloud-new'; showCloudModal(true); });
 if (importBtn) importBtn.addEventListener('click', () => fileInput.click());
 if (exportPngBtn) exportPngBtn.addEventListener('click', downloadCanvasPng);
-if (exportJpgBtn) exportJpgBtn.addEventListener('click', () => {
-    const link = document.createElement('a');
-    const base = (toolbarMapName && toolbarMapName.value) ? toolbarMapName.value.trim() : 'layout';
-    const safe = base.replace(/[<>:\\"/\\|?*\x00-\x1F]/g, '_') || 'layout';
-    link.download = `${safe}.jpg`;
-    link.href = canvas.toDataURL('image/jpeg', 0.92);
-    link.click();
-});
+if (exportJpgBtn) exportJpgBtn.addEventListener('click', downloadCanvasJpg);
+if (exportPdfBtn) exportPdfBtn.addEventListener('click', downloadCanvasPdf);
 if (exportJsonBtn) exportJsonBtn.addEventListener('click', () => {
     downloadJson();
 });
