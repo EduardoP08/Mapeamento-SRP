@@ -17,8 +17,5 @@
   "bugs": {
     "url": "https://github.com/EduardoP08/Mapeamento-SRP/issues"
   },
-  "homepage": "https://github.com/EduardoP08/Mapeamento-SRP#readme",
-  "devDependencies": {
-    "http-server": "^14.1.1"
-  }
+  "homepage": "https://github.com/EduardoP08/Mapeamento-SRP#readme"
 }

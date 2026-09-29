@@ -76,7 +76,7 @@ function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offse
         }
     }
     
-    // Desenhar em camadas: áreas customizadas (fundo) → mesas → assentos → etiquetas (frente)
+    // Desenhar em camadas: (fundo) áreas customizadas → mesas → assentos → etiquetas (frente)
     // Camada 1: Áreas customizadas
     state.tables.filter(t => t.type === 'customArea' || t.type === 'customCircleArea')
         .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
@@ -89,7 +89,7 @@ function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offse
     state.tables.filter(t => t.type === 'seat' || t.type === 'roundSeat')
         .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
-    // Camada 4: Etiquetas (frente)
+    // Camada 4: Etiquetas
     state.tables.filter(t => t.type === 'label')
         .forEach(table => {
             targetCtx.save();

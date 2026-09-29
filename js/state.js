@@ -25,3 +25,5 @@ export const state = {
     // id do mapa carregado da nuvem (se houver)
     currentCloudMapId: null,
 };
+
+// Store the current state of the application

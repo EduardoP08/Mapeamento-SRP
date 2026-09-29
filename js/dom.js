@@ -1,3 +1,4 @@
+//Find HTML elements by ID and store them in variables for later use in the application.
 export const canvas = document.getElementById('canvas');
 export const ctx = canvas.getContext('2d');
 export const sidebar = document.getElementById('sidebar');

@@ -25,7 +25,7 @@ export async function saveMapToCloud(name, mapId = null) {
 
     if (mapId) {
         const mapRef = doc(db, 'maps', mapId);
-        // Merge para não sobrescrever campos que não enviamos
+        // Merge para não sobrescrever campos que não foram enviados
         await setDoc(mapRef, mapData, { merge: true });
         return mapId;
     } else {
