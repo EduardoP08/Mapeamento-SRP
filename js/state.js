@@ -7,6 +7,7 @@ export const state = {
     hoveredTable: null,
     mode: 'select',
     nextTableNumber: 1,
+    nextModularSofaNumber: 1,
     canvasScale: 1,
     canvasOffsetX: 0,
     canvasOffsetY: 0,

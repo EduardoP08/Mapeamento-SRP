@@ -11,13 +11,13 @@ function hexToRgba(hex, alpha) {
 }
 
 export class Table {
-    constructor(type, x, y, width, height, radius, angle, color, name, seats, nameColor = '#000000', cornerSeats = true, seatColor = '#dddddd', counterEnabled = true, fontSize = 54, isHalfCircle = false) {
-        this.type = type;
+    constructor(type, x, y, width, height, diameter, angle, color, name, seats, nameColor = '#000000', cornerSeats = true, seatColor = '#dddddd', counterEnabled = true, fontSize = 54, isHalfCircle = false, lineWidth = 4, lineStyle = 'solid', doubleEnded = false, showCounterToggle = false, sofaBack = false) {
+        this.type = type === 'customCircleArea' && isHalfCircle ? 'customSemiCircleArea' : type;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.radius = radius;
+        this.diameter = diameter;
         this.angle = angle;
         this.color = color;
         this.name = name;
@@ -27,7 +27,11 @@ export class Table {
         this.seatColor = seatColor;
         this.counterEnabled = counterEnabled;
         this.fontSize = fontSize;
-        this.isHalfCircle = isHalfCircle;
+        this.lineWidth = lineWidth;
+        this.lineStyle = lineStyle;
+        this.doubleEnded = doubleEnded;
+        this.showCounterToggle = showCounterToggle;
+        this.sofaBack = sofaBack;
     }
 
     draw(ctx, isSelected = false, isHovered = false) {
@@ -37,6 +41,7 @@ export class Table {
         ctx.fillStyle = this.color;
         ctx.strokeStyle = isSelected ? '#000' : '#8a8a8a';
         ctx.lineWidth = isSelected || isHovered ? 4 : 2;
+        const radius = this.diameter / 2;
 
         if (this.type === 'square') {
             ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
@@ -44,16 +49,23 @@ export class Table {
             this.drawSeatsSquare(ctx);
         } else if (this.type === 'round') {
             ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, 2 * Math.PI);
+            ctx.arc(0, 0, radius, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
             this.drawSeatsRound(ctx);
         } else if (this.type === 'seat') {
             ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
             ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            if (this.sofaBack) {
+                ctx.beginPath();
+                ctx.moveTo(-this.width / 2, -this.height / 2 + 20);
+                ctx.lineTo(this.width / 2, -this.height / 2 + 20);
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
         } else if (this.type === 'roundSeat') {
             ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, 2 * Math.PI);
+            ctx.arc(0, 0, radius, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         } else if (this.type === 'customArea') {
@@ -63,18 +75,18 @@ export class Table {
             ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
             ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
             ctx.setLineDash([]);
-        } else if (this.type === 'customCircleArea') {
+        } else if (this.type === 'customCircleArea' || this.type === 'customSemiCircleArea') {
             ctx.fillStyle = hexToRgba(this.color, 0.15);
             ctx.strokeStyle = this.color;
             ctx.setLineDash([10, 5]);
             ctx.beginPath();
-            if (this.isHalfCircle) {
-                ctx.moveTo(-this.radius, 0);
-                ctx.arc(0, 0, this.radius, Math.PI, 0, false);
-                ctx.lineTo(-this.radius, 0);
+            if (this.type === 'customSemiCircleArea') {
+                ctx.moveTo(-radius, 0);
+                ctx.arc(0, 0, radius, Math.PI, 0, false);
+                ctx.lineTo(-radius, 0);
                 ctx.closePath();
             } else {
-                ctx.arc(0, 0, this.radius, 0, 2 * Math.PI);
+                ctx.arc(0, 0, radius, 0, 2 * Math.PI);
             }
             ctx.fill();
             ctx.stroke();
@@ -82,11 +94,37 @@ export class Table {
         } else if (this.type === 'label') {
             // Labels são apenas texto, sem forma
             // Não precisa fazer nada aqui
+        } else if (this.type === 'flowArrow') {
+            const halfLength = this.height / 2;
+            const headLength = Math.min(this.height * 0.2, this.width * 0.45);
+            const halfHeadWidth = this.width * 0.22;
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = this.lineWidth;
+            ctx.lineCap = this.lineStyle === 'dotted' ? 'round' : 'butt';
+            ctx.setLineDash(this.lineStyle === 'dashed' ? [12, 8] : this.lineStyle === 'dotted' ? [1, 8] : []);
+            ctx.beginPath();
+            ctx.moveTo(0, halfLength);
+            ctx.lineTo(0, -halfLength);
+            ctx.stroke();
+            ctx.setLineDash(this.lineStyle === 'dashed' ? [12, 8] : this.lineStyle === 'dotted' ? [1, 8] : []);
+            ctx.beginPath();
+            ctx.moveTo(-halfHeadWidth, -halfLength + headLength);
+            ctx.lineTo(0, -halfLength);
+            ctx.lineTo(halfHeadWidth, -halfLength + headLength);
+            ctx.stroke();
+            if (this.doubleEnded) {
+                ctx.beginPath();
+                ctx.moveTo(-halfHeadWidth, halfLength - headLength);
+                ctx.lineTo(0, halfLength);
+                ctx.lineTo(halfHeadWidth, halfLength - headLength);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
         }
 
         ctx.restore();
 
-        if (this.name) {
+        if (this.name && this.type !== 'flowArrow') {
             ctx.fillStyle = this.nameColor;
             ctx.font = `${this.fontSize}px Arial`;
             ctx.textAlign = 'center';
@@ -94,8 +132,8 @@ export class Table {
 
             let textX = this.x;
             let textY = this.y;
-            if (this.type === 'customCircleArea' && this.isHalfCircle) {
-                const offset = (4 * this.radius) / (3 * Math.PI);
+            if (this.type === 'customSemiCircleArea') {
+                const offset = (4 * radius) / (3 * Math.PI);
                 const angleRad = this.angle * Math.PI / 180;
                 textX = this.x + offset * Math.sin(angleRad);
                 textY = this.y - offset * Math.cos(angleRad);
@@ -201,7 +239,7 @@ export class Table {
 
         for (let i = 0; i < this.seats; i++) {
             const angle = i * angleStep;
-            const distance = this.radius + offset + seatDepth / 2;
+            const distance = this.diameter / 2 + offset + seatDepth / 2;
             const x = Math.cos(angle) * distance;
             const y = Math.sin(angle) * distance;
 
@@ -230,15 +268,16 @@ export class Table {
         const rx = dx * cos - dy * sin;
         const ry = dx * sin + dy * cos;
 
-        if (this.type === 'square' || this.type === 'seat' || this.type === 'customArea') {
+        if (this.type === 'square' || this.type === 'seat' || this.type === 'customArea' || this.type === 'flowArrow') {
             return Math.abs(rx) <= this.width / 2 && Math.abs(ry) <= this.height / 2;
         }
-        if (this.type === 'round' || this.type === 'roundSeat' || this.type === 'customCircleArea') {
-            const insideCircle = rx * rx + ry * ry <= this.radius * this.radius;
+        if (this.type === 'round' || this.type === 'roundSeat' || this.type === 'customCircleArea' || this.type === 'customSemiCircleArea') {
+            const radius = this.diameter / 2;
+            const insideCircle = rx * rx + ry * ry <= radius * radius;
             if (!insideCircle) {
                 return false;
             }
-            if (this.type === 'customCircleArea' && this.isHalfCircle) {
+            if (this.type === 'customSemiCircleArea') {
                 return ry <= 0;
             }
             return true;

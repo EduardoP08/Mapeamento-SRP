@@ -30,15 +30,15 @@ export function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 
 function drawTableMeasure(table, targetCtx = ctx) {
-    const width = table.width || (table.radius ? table.radius * 2 : 0);
-    const height = table.height || (table.radius ? table.radius * 2 : 0);
+    const width = table.width || table.diameter || 0;
+    const height = table.height || table.diameter || 0;
     if (!width || !height) return;
-    const isRound = table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea';
+    const isRound = table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea' || table.type === 'customSemiCircleArea';
     const measureText = isRound ? `Ø ${width} cm` : `${width} x ${height} cm`;
 
     let textY = table.y;
-    if (table.type === 'customCircleArea' && table.isHalfCircle) {
-        const offset = (4 * table.radius) / (3 * Math.PI);
+    if (table.type === 'customSemiCircleArea') {
+        const offset = (4 * (table.diameter / 2)) / (3 * Math.PI);
         const angleRad = table.angle * Math.PI / 180;
         textY -= offset * Math.cos(angleRad);
     }
@@ -78,7 +78,7 @@ function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offse
     
     // Desenhar em camadas: (fundo) áreas customizadas → mesas → assentos → etiquetas (frente)
     // Camada 1: Áreas customizadas
-    state.tables.filter(t => t.type === 'customArea' || t.type === 'customCircleArea')
+    state.tables.filter(t => t.type === 'customArea' || t.type === 'customCircleArea' || t.type === 'customSemiCircleArea')
         .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
     // Camada 2: Mesas
@@ -90,6 +90,9 @@ function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offse
         .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
     
     // Camada 4: Etiquetas
+    state.tables.filter(t => t.type === 'flowArrow')
+        .forEach(table => table.draw(targetCtx, includeOverlays && table === state.selectedTable, includeOverlays && table === state.hoveredTable));
+
     state.tables.filter(t => t.type === 'label')
         .forEach(table => {
             targetCtx.save();
@@ -164,8 +167,8 @@ export function createExportCanvas() {
     const bounds = { left: 0, top: 0, right: backgroundWidth, bottom: backgroundHeight };
 
     state.tables.forEach(table => {
-        let halfWidth = table.width ? table.width / 2 : (table.radius || 0);
-        let halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+        let halfWidth = table.width ? table.width / 2 : (table.diameter || 0) / 2;
+        let halfHeight = table.height ? table.height / 2 : (table.diameter || 0) / 2;
         if (table.type === 'label') {
             halfWidth = Math.max(halfWidth, (String(table.name || '').length * (table.fontSize || 0) * 0.6 + 20) / 2);
             halfHeight = Math.max(halfHeight, ((table.fontSize || 0) + 10) / 2);

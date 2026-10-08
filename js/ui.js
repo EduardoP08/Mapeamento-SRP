@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, radiusLabel, radiusInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addLabelBtn, halfCircleInput, halfCircleLabel, seatCounter, exportPdfBtn } from './dom.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, diameterLabel, diameterInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addCustomSemiCircleAreaBtn, addFlowArrowBtn, addBuffetTableBtn, addCakeTableBtn, addRound8TableBtn, addBistroTableBtn, addModularSofaBtn, addPalletSofaBtn, arrowLineWidthInput, arrowLineStyleInput, doubleEndedInput, addLabelBtn, seatCounter, exportPdfBtn } from './dom.js';
 import { draw, getCanvasCoords, updateBackgroundImage, createExportCanvas } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
@@ -196,6 +196,7 @@ function finishPendingNewIfRequested() {
         pendingNewAfterSave = false;
         state.tables = [];
         state.nextTableNumber = 1;
+        state.nextModularSofaNumber = 1;
         state.selectedTable = null;
         state.currentCloudMapId = null;
         sidebar.classList.remove('show');
@@ -334,120 +335,33 @@ function updateSizeFieldsVisibility(table) {
         const group = input.closest('.color-field');
         if (group) group.style.display = visible ? '' : 'none';
     };
+    const type = table?.type;
+    const isRound = ['round', 'roundSeat', 'customCircleArea', 'customSemiCircleArea'].includes(type);
+    const isLabel = type === 'label';
+    const isArrow = type === 'flowArrow';
+    const isSquareTable = type === 'square';
+    const isSeat = type === 'seat' || type === 'roundSeat';
+    const hasSeats = isSquareTable || isSeat || type === 'round';
 
-    if (!table) {
-        dimensionsSection?.classList.remove('round-layout');
-        widthLabel.style.display = 'none';
-        widthInput.style.display = 'none';
-        heightLabel.style.display = 'none';
-        heightInput.style.display = 'none';
-        radiusLabel.style.display = 'none';
-        radiusInput.style.display = 'none';
-        cornerSeatsLabel.style.display = 'none';
-        setVisibility('widthField', false);
-        setVisibility('heightField', false);
-        setVisibility('radiusField', false);
-        setVisibility('seatsSection', false);
-        setInputGroupVisibility(colorInput, false);
-        setInputGroupVisibility(seatColorInput, false);
-        return;
-    }
+    dimensionsSection?.classList.toggle('round-layout', Boolean(table && isRound));
+    setVisibility('widthField', Boolean(table && !isRound && !isLabel));
+    setVisibility('heightField', Boolean(table && !isRound && !isLabel));
+    setVisibility('diameterField', Boolean(table && isRound));
+    setVisibility('seatsSection', Boolean(table && (isSquareTable || type === 'round')));
+    setVisibility('fontSizeField', Boolean(table && !isArrow));
+    setVisibility('arrowLineWidthField', Boolean(table && isArrow));
+    setVisibility('arrowLineStyleField', Boolean(table && isArrow));
+    setVisibility('doubleEndedLabel', Boolean(table && isArrow));
 
-    if (table.type === 'label') {
-        dimensionsSection?.classList.remove('round-layout');
-        // Para labels, mostrar apenas: nome, fontSize, nameColor, angle
-        widthLabel.style.display = 'none';
-        widthInput.style.display = 'none';
-        heightLabel.style.display = 'none';
-        heightInput.style.display = 'none';
-        radiusLabel.style.display = 'none';
-        radiusInput.style.display = 'none';
-        cornerSeatsLabel.style.display = 'none';
-        counterEnabledLabel.style.display = 'none';
-        seatColorLabel.style.display = 'none';
-        seatColorInput.style.display = 'none';
-        seatsLabel.style.display = 'none';
-        seatsInput.style.display = 'none';
-        halfCircleLabel.style.display = 'none';
-        colorLabel.style.display = 'none';
-        colorInput.style.display = 'none';
-        setVisibility('widthField', false);
-        setVisibility('heightField', false);
-        setVisibility('radiusField', false);
-        setVisibility('seatsSection', false);
-        setInputGroupVisibility(colorInput, false);
-        setInputGroupVisibility(seatColorInput, false);
-    } else if (table.type === 'square' || table.type === 'seat' || table.type === 'customArea') {
-        dimensionsSection?.classList.remove('round-layout');
-        widthLabel.style.display = 'block';
-        widthInput.style.display = 'block';
-        heightLabel.style.display = 'block';
-        heightInput.style.display = 'block';
-        radiusLabel.style.display = 'none';
-        radiusInput.style.display = 'none';
-        cornerSeatsLabel.style.display = table.type === 'square' ? 'block' : 'none';
-        counterEnabledLabel.style.display = table.type === 'seat' ? 'block' : 'none';
-        seatColorLabel.style.display = table.type === 'square' ? 'block' : 'none';
-        seatColorInput.style.display = table.type === 'square' ? 'block' : 'none';
-        seatsLabel.style.display = (table.type === 'square' || table.type === 'seat') ? 'block' : 'none';
-        seatsInput.style.display = (table.type === 'square' || table.type === 'seat') ? 'block' : 'none';
-        halfCircleLabel.style.display = 'none';
-        colorLabel.style.display = 'block';
-        colorInput.style.display = 'block';
-        setVisibility('widthField', true);
-        setVisibility('heightField', true);
-        setVisibility('radiusField', false);
-        setVisibility('seatsSection', table.type === 'square');
-        setInputGroupVisibility(colorInput, true);
-        setInputGroupVisibility(seatColorInput, table.type === 'square');
-        updateMaxSeats(table);
-    } else if (table.type === 'round' || table.type === 'roundSeat' || table.type === 'customCircleArea') {
-        dimensionsSection?.classList.add('round-layout');
-        widthLabel.style.display = 'none';
-        heightLabel.style.display = 'none';
-        widthInput.style.display = 'none';
-        heightInput.style.display = 'none';
-        radiusLabel.style.display = 'block';
-        radiusInput.style.display = 'block';
-        cornerSeatsLabel.style.display = 'none';
-        counterEnabledLabel.style.display = table.type === 'roundSeat' ? 'block' : 'none';
-        seatColorLabel.style.display = table.type === 'round' ? 'block' : 'none';
-        seatColorInput.style.display = table.type === 'round' ? 'block' : 'none';
-        seatsLabel.style.display = (table.type === 'round' || table.type === 'roundSeat') ? 'block' : 'none';
-        seatsInput.style.display = (table.type === 'round' || table.type === 'roundSeat') ? 'block' : 'none';
-        halfCircleLabel.style.display = table.type === 'customCircleArea' ? 'block' : 'none';
-        colorLabel.style.display = 'block';
-        colorInput.style.display = 'block';
-        setVisibility('widthField', false);
-        setVisibility('heightField', false);
-        setVisibility('radiusField', true);
-        setVisibility('seatsSection', table.type === 'round');
-        setInputGroupVisibility(colorInput, true);
-        setInputGroupVisibility(seatColorInput, table.type === 'round');
-        updateMaxSeats(table);
-    } else {
-        dimensionsSection?.classList.remove('round-layout');
-        widthLabel.style.display = 'none';
-        heightLabel.style.display = 'none';
-        widthInput.style.display = 'none';
-        heightInput.style.display = 'none';
-        radiusLabel.style.display = 'block';
-        radiusInput.style.display = 'block';
-        cornerSeatsLabel.style.display = 'none';
-        counterEnabledLabel.style.display = 'none';
-        seatColorLabel.style.display = 'block';
-        seatColorInput.style.display = 'block';
-        seatsLabel.style.display = 'block';
-        seatsInput.style.display = 'block';
-        halfCircleLabel.style.display = 'none';
-        setVisibility('widthField', false);
-        setVisibility('heightField', false);
-        setVisibility('radiusField', false);
-        setVisibility('seatsSection', false);
-        setInputGroupVisibility(colorInput, true);
-        setInputGroupVisibility(seatColorInput, false);
-        updateMaxSeats(table);
-    }
+    cornerSeatsLabel.style.display = isSquareTable ? 'block' : 'none';
+    counterEnabledLabel.style.display = isSeat || table?.showCounterToggle ? 'block' : 'none';
+    seatsLabel.style.display = hasSeats ? 'block' : 'none';
+    seatsInput.style.display = hasSeats ? 'block' : 'none';
+    colorLabel.style.display = isLabel ? 'none' : 'block';
+    setInputGroupVisibility(colorInput, Boolean(table && !isLabel));
+    setInputGroupVisibility(seatColorInput, isSquareTable || type === 'round');
+    setInputGroupVisibility(nameColorInput, Boolean(table && !isArrow));
+    updateMaxSeats(table);
 }
 
 function updateMaxSeats(table) {
@@ -473,7 +387,7 @@ function updateMaxSeats(table) {
             seatsInput.value = maxSeats;
         }
     } else if (table.type === 'round') {
-        const circumference = 2 * Math.PI * table.radius;
+        const circumference = Math.PI * table.diameter;
         const maxSeats = Math.round(circumference / 60);
         seatsInput.max = maxSeats;
         seatsInput.min = 0;
@@ -494,7 +408,9 @@ const tableTypeLabels = {
     roundSeat: 'Assento Redondo',
     customArea: 'Área Quadrada',
     customCircleArea: 'Área Redonda',
-    label: 'Etiqueta'
+    customSemiCircleArea: 'Semicírculo',
+    label: 'Etiqueta',
+    flowArrow: 'Seta'
 };
 
 function updateObjectToolbarPosition() {
@@ -505,8 +421,8 @@ function updateObjectToolbarPosition() {
     const table = state.selectedTable;
     const screenX = rect.left + state.canvasOffsetX + table.x * scale;
     const angle = (table.angle || 0) * Math.PI / 180;
-    const halfWidth = table.width ? table.width / 2 : (table.radius || 0);
-    const halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+    const halfWidth = table.width ? table.width / 2 : (table.diameter || 0) / 2;
+    const halfHeight = table.height ? table.height / 2 : (table.diameter || 0) / 2;
     const rotatedHalfHeight = Math.abs(Math.cos(angle) * halfHeight) + Math.abs(Math.sin(angle) * halfWidth);
     const screenY = rect.top + state.canvasOffsetY + (table.y - rotatedHalfHeight) * scale;
     objectToolbar.style.left = `${screenX}px`;
@@ -534,7 +450,7 @@ function serializeTableItem(table) {
         y: table.y,
         width: table.width,
         height: table.height,
-        radius: table.radius,
+        diameter: table.diameter,
         angle: table.angle,
         color: table.color,
         name: table.name,
@@ -544,7 +460,11 @@ function serializeTableItem(table) {
         seatColor: table.seatColor,
         counterEnabled: table.counterEnabled,
         fontSize: table.fontSize,
-        isHalfCircle: table.isHalfCircle
+        lineWidth: table.lineWidth,
+        lineStyle: table.lineStyle,
+        doubleEnded: table.doubleEnded,
+        showCounterToggle: table.showCounterToggle,
+        sofaBack: table.sofaBack
     };
 }
 
@@ -562,12 +482,13 @@ function createTableFromSavedItem(itemData) {
     const item = typeof itemData.item === 'string' ? JSON.parse(itemData.item) : itemData.item;
     const customizationName = String(item.name ?? '');
     const isNumberedTable = (item.type === 'square' || item.type === 'round') && /^\d+$/.test(customizationName.trim());
-    const tableName = isNumberedTable ? String(state.nextTableNumber++) : customizationName;
+    const tableName = item.sofaBack ? nextModularSofaName() : isNumberedTable ? String(state.nextTableNumber++) : customizationName;
     const { x, y } = getWindowCenterCanvasCoords();
     const table = new Table(
-        item.type, x, y, item.width, item.height, item.radius, item.angle,
+        item.type, x, y, item.width, item.height, item.diameter ?? (item.radius ? item.radius * 2 : 0), item.angle,
         item.color, tableName, item.seats, item.nameColor, item.cornerSeats,
-        item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle
+        item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle,
+        item.lineWidth, item.lineStyle, item.doubleEnded, item.showCounterToggle, item.sofaBack
     );
     recordHistory();
     state.tables.push(table);
@@ -582,7 +503,9 @@ const savedItemGroups = {
     roundSeat: savedSeats,
     customArea: savedAreas,
     customCircleArea: savedAreas,
-    label: savedLabels
+    customSemiCircleArea: savedAreas,
+    label: savedLabels,
+    flowArrow: savedLabels
 };
 
 const savedItemIcons = {
@@ -592,7 +515,9 @@ const savedItemIcons = {
     roundSeat: 'fa-circle',
     customArea: 'fa-vector-square',
     customCircleArea: 'fa-circle',
-    label: 'fa-tag'
+    customSemiCircleArea: 'fa-circle-half-stroke',
+    label: 'fa-tag',
+    flowArrow: 'fa-arrow-up'
 };
 
 let selectedSavedItem = null;
@@ -724,7 +649,7 @@ export function selectTable(table, showToolbar = true) {
         nameInput.value = table.name;
         widthInput.value = table.width;
         heightInput.value = table.height;
-        radiusInput.value = table.radius;
+        diameterInput.value = table.diameter;
         angleInput.value = table.angle;
         angleNumberInput.value = table.angle;
         colorInput.value = table.color;
@@ -739,7 +664,9 @@ export function selectTable(table, showToolbar = true) {
         fontSizeInput.value = table.fontSize;
         counterEnabledInput.checked = table.counterEnabled !== false;
         cornerSeatsInput.checked = table.cornerSeats;
-        halfCircleInput.checked = table.isHalfCircle === true;
+        arrowLineWidthInput.value = table.lineWidth;
+        arrowLineStyleInput.value = table.lineStyle;
+        doubleEndedInput.checked = table.doubleEnded === true;
         seatsInput.value = table.seats;
         posXInput.value = Math.round(table.x);
         posYInput.value = Math.round(table.y);
@@ -754,7 +681,6 @@ export function selectTable(table, showToolbar = true) {
         sidebar.classList.remove('show');
         const customizeTitle = document.getElementById('customizeTitle');
         if (customizeTitle) customizeTitle.textContent = 'Item';
-        halfCircleInput.checked = false;
         updateSizeFieldsVisibility(null);
         updateSeatWarning(null);
         hideObjectToolbar();
@@ -1001,7 +927,7 @@ if (canvas) {
         } else if (state.mode === 'select') {
             let found = false;
             let selectedTable = null;
-            selectedTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            selectedTable = state.tables.find(t => (t.type === 'label' || t.type === 'flowArrow') && t.isPointInside(x, y));
             if (!selectedTable) {
                 selectedTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
             }
@@ -1009,7 +935,7 @@ if (canvas) {
                 selectedTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
             }
             if (!selectedTable) {
-                selectedTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+                selectedTable = state.tables.find(t => ['customArea', 'customCircleArea', 'customSemiCircleArea'].includes(t.type) && t.isPointInside(x, y));
             }
             if (selectedTable) {
                 if (selectLockedGroup(selectedTable)) {
@@ -1042,7 +968,7 @@ if (canvas) {
             draw();
         } else if (state.mode === 'delete') {
             let tableToDelete = null;
-            tableToDelete = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            tableToDelete = state.tables.find(t => (t.type === 'label' || t.type === 'flowArrow') && t.isPointInside(x, y));
             if (!tableToDelete) {
                 tableToDelete = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
             }
@@ -1050,7 +976,7 @@ if (canvas) {
                 tableToDelete = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
             }
             if (!tableToDelete) {
-                tableToDelete = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+                tableToDelete = state.tables.find(t => ['customArea', 'customCircleArea', 'customSemiCircleArea'].includes(t.type) && t.isPointInside(x, y));
             }
             if (tableToDelete) {
                 recordHistory();
@@ -1088,7 +1014,7 @@ if (canvas) {
         } else {
             const { x, y } = getCanvasCoords(e);
             let hoveredTable = null;
-            hoveredTable = state.tables.find(t => t.type === 'label' && t.isPointInside(x, y));
+            hoveredTable = state.tables.find(t => (t.type === 'label' || t.type === 'flowArrow') && t.isPointInside(x, y));
             if (!hoveredTable) {
                 hoveredTable = state.tables.find(t => (t.type === 'seat' || t.type === 'roundSeat') && t.isPointInside(x, y));
             }
@@ -1096,7 +1022,7 @@ if (canvas) {
                 hoveredTable = state.tables.find(t => (t.type === 'square' || t.type === 'round') && t.isPointInside(x, y));
             }
             if (!hoveredTable) {
-                hoveredTable = state.tables.find(t => (t.type === 'customArea' || t.type === 'customCircleArea') && t.isPointInside(x, y));
+                hoveredTable = state.tables.find(t => ['customArea', 'customCircleArea', 'customSemiCircleArea'].includes(t.type) && t.isPointInside(x, y));
             }
             if (state.hoveredTable !== hoveredTable) {
                 state.hoveredTable = hoveredTable;
@@ -1221,8 +1147,8 @@ if (deleteModeBtn) deleteModeBtn.addEventListener('click', () => {
 });
 
 function getTableBounds(table) {
-    const halfWidth = table.width ? table.width / 2 : (table.radius || 0);
-    const halfHeight = table.height ? table.height / 2 : (table.radius || 0);
+    const halfWidth = table.width ? table.width / 2 : (table.diameter || 0) / 2;
+    const halfHeight = table.height ? table.height / 2 : (table.diameter || 0) / 2;
     const angle = (table.angle || 0) * Math.PI / 180;
     const rotatedWidth = Math.abs(Math.cos(angle) * halfWidth) + Math.abs(Math.sin(angle) * halfHeight);
     const rotatedHeight = Math.abs(Math.sin(angle) * halfWidth) + Math.abs(Math.cos(angle) * halfHeight);
@@ -1263,8 +1189,13 @@ function selectTablesInRect(rect) {
     if (state.selectedTables.length) updateMultiToolbarPosition();
 }
 
+function nextModularSofaName() {
+    return `M${state.nextModularSofaNumber++}`;
+}
+
 function cloneTable(table, x, y, name = table.name) {
-    return new table.constructor(table.type, x, y, table.width, table.height, table.radius, table.angle, table.color, name, table.seats, table.nameColor, table.cornerSeats, table.seatColor, table.counterEnabled, table.fontSize, table.isHalfCircle);
+    const cloneName = table.sofaBack ? nextModularSofaName() : name;
+    return new table.constructor(table.type, x, y, table.width, table.height, table.diameter, table.angle, table.color, cloneName, table.seats, table.nameColor, table.cornerSeats, table.seatColor, table.counterEnabled, table.fontSize, false, table.lineWidth, table.lineStyle, table.doubleEnded, table.showCounterToggle, table.sofaBack);
 }
 
 function serializeGroup(tables) {
@@ -1284,7 +1215,7 @@ function createTablesFromSavedGroup(itemData) {
     const center = getWindowCenterCanvasCoords();
     const groupId = `saved-group-${nextGroupId++}`;
     return group.items.map(item => {
-        const table = new Table(item.type, center.x + item.x, center.y + item.y, item.width, item.height, item.radius, item.angle, item.color, item.name, item.seats, item.nameColor, item.cornerSeats, item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle);
+        const table = new Table(item.type, center.x + item.x, center.y + item.y, item.width, item.height, item.diameter ?? (item.radius ? item.radius * 2 : 0), item.angle, item.color, item.sofaBack ? nextModularSofaName() : item.name, item.seats, item.nameColor, item.cornerSeats, item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle, item.lineWidth, item.lineStyle, item.doubleEnded, item.showCounterToggle, item.sofaBack);
         table.groupId = groupId;
         return table;
     });
@@ -1414,6 +1345,7 @@ if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => {
         if (state.tables.length) recordHistory();
         state.tables = [];
         state.nextTableNumber = 1;
+        state.nextModularSofaNumber = 1;
         state.selectedTable = null;
         sidebar.classList.remove('show');
         draw();
@@ -1442,6 +1374,7 @@ if (newMapBtn) newMapBtn.addEventListener('click', () => {
         if (confirm('Tem certeza que deseja criar um novo mapa? Isso apagará o atual.')) {
             state.tables = [];
             state.nextTableNumber = 1;
+            state.nextModularSofaNumber = 1;
             state.selectedTable = null;
             state.currentCloudMapId = null;
             sidebar.classList.remove('show');
@@ -1587,7 +1520,7 @@ fontSizeInput.addEventListener('input', () => {
 });
 
 widthInput.addEventListener('input', () => {
-    if (state.selectedTable && (state.selectedTable.type === 'square' || state.selectedTable.type === 'seat' || state.selectedTable.type === 'customArea')) {
+    if (state.selectedTable && ['square', 'seat', 'customArea', 'flowArrow'].includes(state.selectedTable.type)) {
         recordHistory();
         state.selectedTable.width = parseInt(widthInput.value, 10);
         updateMaxSeats(state.selectedTable);
@@ -1597,7 +1530,7 @@ widthInput.addEventListener('input', () => {
 });
 
 heightInput.addEventListener('input', () => {
-    if (state.selectedTable && (state.selectedTable.type === 'square' || state.selectedTable.type === 'seat' || state.selectedTable.type === 'customArea')) {
+    if (state.selectedTable && ['square', 'seat', 'customArea', 'flowArrow'].includes(state.selectedTable.type)) {
         recordHistory();
         state.selectedTable.height = parseInt(heightInput.value, 10);
         updateMaxSeats(state.selectedTable);
@@ -1606,19 +1539,11 @@ heightInput.addEventListener('input', () => {
     }
 });
 
-radiusInput.addEventListener('input', () => {
-    if (state.selectedTable && (state.selectedTable.type === 'round' || state.selectedTable.type === 'roundSeat' || state.selectedTable.type === 'customCircleArea')) {
+diameterInput.addEventListener('input', () => {
+    if (state.selectedTable && ['round', 'roundSeat', 'customCircleArea', 'customSemiCircleArea'].includes(state.selectedTable.type)) {
         recordHistory();
-        state.selectedTable.radius = parseInt(radiusInput.value, 10);
+        state.selectedTable.diameter = parseInt(diameterInput.value, 10);
         updateMaxSeats(state.selectedTable);
-        draw();
-    }
-});
-
-halfCircleInput.addEventListener('change', () => {
-    if (state.selectedTable && state.selectedTable.type === 'customCircleArea') {
-        recordHistory();
-        state.selectedTable.isHalfCircle = halfCircleInput.checked;
         draw();
     }
 });
@@ -1681,6 +1606,30 @@ counterEnabledInput.addEventListener('change', () => {
     }
 });
 
+arrowLineWidthInput.addEventListener('input', () => {
+    if (state.selectedTable?.type === 'flowArrow') {
+        recordHistory();
+        state.selectedTable.lineWidth = Math.min(30, Math.max(1, parseInt(arrowLineWidthInput.value, 10) || 1));
+        draw();
+    }
+});
+
+arrowLineStyleInput.addEventListener('change', () => {
+    if (state.selectedTable?.type === 'flowArrow') {
+        recordHistory();
+        state.selectedTable.lineStyle = arrowLineStyleInput.value;
+        draw();
+    }
+});
+
+doubleEndedInput.addEventListener('change', () => {
+    if (state.selectedTable?.type === 'flowArrow') {
+        recordHistory();
+        state.selectedTable.doubleEnded = doubleEndedInput.checked;
+        draw();
+    }
+});
+
 seatsInput.addEventListener('input', () => {
     if (state.selectedTable) {
         recordHistory();
@@ -1706,8 +1655,10 @@ duplicateBtn.addEventListener('click', () => {
     }
 
     recordHistory();
-    const shouldKeepName = ['seat', 'roundSeat', 'customArea', 'customCircleArea', 'label'].includes(state.selectedTable.type);
-    const newName = shouldKeepName ? state.selectedTable.name : String(state.nextTableNumber++);
+    const shouldKeepName = ['seat', 'roundSeat', 'customArea', 'customCircleArea', 'customSemiCircleArea', 'label', 'flowArrow'].includes(state.selectedTable.type);
+    const newName = state.selectedTable.sofaBack
+        ? nextModularSofaName()
+        : shouldKeepName ? state.selectedTable.name : String(state.nextTableNumber++);
 
     const newTable = new state.selectedTable.constructor(
         state.selectedTable.type,
@@ -1715,7 +1666,7 @@ duplicateBtn.addEventListener('click', () => {
         state.selectedTable.y + 50,
         state.selectedTable.width,
         state.selectedTable.height,
-        state.selectedTable.radius,
+        state.selectedTable.diameter,
         state.selectedTable.angle,
         state.selectedTable.color,
         newName,
@@ -1725,7 +1676,12 @@ duplicateBtn.addEventListener('click', () => {
         state.selectedTable.seatColor,
         state.selectedTable.counterEnabled,
         state.selectedTable.fontSize,
-        state.selectedTable.isHalfCircle
+        false,
+        state.selectedTable.lineWidth,
+        state.selectedTable.lineStyle,
+        state.selectedTable.doubleEnded,
+        state.selectedTable.showCounterToggle,
+        state.selectedTable.sofaBack
     );
 
     state.tables.push(newTable);
@@ -1807,6 +1763,24 @@ document.addEventListener('mousedown', event => {
     }
 });
 
+function addPresetItem({ type, name, width = 0, height = 0, diameter = 0, seats = 0, color = '#a3a3a3', counterEnabled = true, lineWidth = 4, lineStyle = 'solid', doubleEnded = false, showCounterToggle = false, sofaBack = false, numberedTable = false }) {
+    const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
+    const tableName = sofaBack ? nextModularSofaName() : numberedTable ? String(state.nextTableNumber++) : name;
+    const table = new Table(type, x, y, width, height, diameter, 0, color, tableName, seats, '#000000', true, '#e7e7e7', counterEnabled, 54, false, lineWidth, lineStyle, doubleEnded, showCounterToggle, sofaBack);
+    state.tables.push(table);
+    selectTable(table);
+    draw();
+}
+
+if (addBuffetTableBtn) addBuffetTableBtn.addEventListener('click', () => addPresetItem({ type: 'square', name: 'Mesa de Buffet', width: 100, height: 240, color: '#F5A6A6' }));
+if (addCakeTableBtn) addCakeTableBtn.addEventListener('click', () => addPresetItem({ type: 'square', name: 'Mesa do Bolo', width: 110, height: 220, color: '#A9C7F5' }));
+if (addRound8TableBtn) addRound8TableBtn.addEventListener('click', () => addPresetItem({ type: 'round', name: 'Mesa Redonda 8', diameter: 144, seats: 8, numberedTable: true }));
+if (addBistroTableBtn) addBistroTableBtn.addEventListener('click', () => addPresetItem({ type: 'round', name: 'Mesa Bistrô', diameter: 63, seats: 3, showCounterToggle: true }));
+if (addModularSofaBtn) addModularSofaBtn.addEventListener('click', () => addPresetItem({ type: 'seat', name: 'Sofá Modular', width: 100, height: 90, seats: 2, color: '#c6ad91', sofaBack: true }));
+if (addPalletSofaBtn) addPalletSofaBtn.addEventListener('click', () => addPresetItem({ type: 'seat', name: 'Sofá Pallet', width: 240, height: 90, seats: 4, color: '#b28a61' }));
+if (addFlowArrowBtn) addFlowArrowBtn.addEventListener('click', () => addPresetItem({ type: 'flowArrow', name: 'Seta', width: 100, height: 200, color: '#c74747' }));
+
 if (addSquareBtn) addSquareBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
     recordHistory();
@@ -1818,7 +1792,7 @@ if (addSquareBtn) addSquareBtn.addEventListener('click', () => {
 if (addRoundBtn) addRoundBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
     recordHistory();
-    const table = new Table('round', x, y, 0, 0, 60, 0, '#a3a3a3', String(state.nextTableNumber++), 8, '#000000', true, '#e7e7e7');
+    const table = new Table('round', x, y, 0, 0, 120, 0, '#a3a3a3', String(state.nextTableNumber++), 6, '#000000', true, '#e7e7e7');
     state.tables.push(table);
     selectTable(table);
     draw();
@@ -1835,7 +1809,7 @@ if (addSeatBtn) addSeatBtn.addEventListener('click', () => {
 if (addRoundSeatBtn) addRoundSeatBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
     recordHistory();
-    const roundSeat = new Table('roundSeat', x, y, 0, 0, 20, 0, '#e7e7e7', '', 1, '#000000', false, '#e7e7e7');
+    const roundSeat = new Table('roundSeat', x, y, 0, 0, 40, 0, '#e7e7e7', '', 1, '#000000', false, '#e7e7e7');
     state.tables.push(roundSeat);
     selectTable(roundSeat);
     draw();
@@ -1853,9 +1827,18 @@ if (addCustomAreaBtn) addCustomAreaBtn.addEventListener('click', () => {
 if (addCustomCircleAreaBtn) addCustomCircleAreaBtn.addEventListener('click', () => {
     const { x, y } = getWindowCenterCanvasCoords();
     recordHistory();
-    const customCircleArea = new Table('customCircleArea', x, y, 0, 0, 150, 0, '#8B4513', 'Área Circular Customizada', 0, '#000000', false, '#e7e7e7', false, 54, false);
+    const customCircleArea = new Table('customCircleArea', x, y, 0, 0, 300, 0, '#8B4513', 'Área Circular Customizada', 0, '#000000', false, '#e7e7e7', false, 54);
     state.tables.push(customCircleArea);
     selectTable(customCircleArea);
+    draw();
+});
+
+if (addCustomSemiCircleAreaBtn) addCustomSemiCircleAreaBtn.addEventListener('click', () => {
+    const { x, y } = getWindowCenterCanvasCoords();
+    recordHistory();
+    const semicircle = new Table('customSemiCircleArea', x, y, 0, 0, 300, 0, '#8B4513', 'Semicírculo', 0, '#000000', false, '#e7e7e7', false, 54);
+    state.tables.push(semicircle);
+    selectTable(semicircle);
     draw();
 });
 

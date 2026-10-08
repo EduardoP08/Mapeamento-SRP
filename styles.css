@@ -664,7 +664,7 @@ canvas {
     gap: 6px 8px;
 }
 
-#dimensionsSection.round-layout #radiusField {
+#dimensionsSection.round-layout #diameterField {
     grid-column: 1 / -1;
 }
 
@@ -684,7 +684,8 @@ canvas {
 }
 
 .sidebar .customize-accordion input[type="number"],
-.sidebar .customize-accordion input[type="text"] {
+.sidebar .customize-accordion input[type="text"],
+.sidebar .customize-accordion select {
     width: 100%;
     box-sizing: border-box;
     padding: 5px 7px;

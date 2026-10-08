@@ -5,13 +5,14 @@ import { seatCounter } from './dom.js';
 export function serializeLayout() {
     return JSON.stringify({
         nextTableNumber: state.nextTableNumber,
+        nextModularSofaNumber: state.nextModularSofaNumber,
         tables: state.tables.map(table => ({
             type: table.type,
             x: table.x,
             y: table.y,
             width: table.width,
             height: table.height,
-            radius: table.radius,
+            diameter: table.diameter,
             angle: table.angle,
             color: table.color,
             name: table.name,
@@ -21,7 +22,11 @@ export function serializeLayout() {
             seatColor: table.seatColor,
             counterEnabled: table.counterEnabled,
             fontSize: table.fontSize,
-            isHalfCircle: table.isHalfCircle,
+            lineWidth: table.lineWidth,
+            lineStyle: table.lineStyle,
+            doubleEnded: table.doubleEnded,
+            showCounterToggle: table.showCounterToggle,
+            sofaBack: table.sofaBack,
             groupId: table.groupId || null
         }))
     }, null, 2);
@@ -40,7 +45,7 @@ export function deserializeLayout(json) {
             item.y,
             item.width,
             item.height,
-            item.radius,
+            item.diameter ?? (item.radius ? item.radius * 2 : 0),
             item.angle,
             item.color,
             item.name,
@@ -50,11 +55,24 @@ export function deserializeLayout(json) {
             item.seatColor,
             item.counterEnabled,
             item.fontSize,
-            item.isHalfCircle
+            item.isHalfCircle,
+            item.lineWidth,
+            item.lineStyle,
+            item.doubleEnded,
+            item.showCounterToggle,
+            item.sofaBack
         );
         if (item.groupId) table.groupId = item.groupId;
         return table;
     });
+
+    state.nextModularSofaNumber = typeof data.nextModularSofaNumber === 'number' ? data.nextModularSofaNumber : 1;
+    if (typeof data.nextModularSofaNumber !== 'number') {
+        state.tables.filter(table => table.sofaBack).forEach(table => {
+            const match = /^M(\d+)$/.exec(table.name);
+            if (match) state.nextModularSofaNumber = Math.max(state.nextModularSofaNumber, Number(match[1]) + 1);
+        });
+    }
 
     state.nextTableNumber = typeof data.nextTableNumber === 'number' ? data.nextTableNumber : 1;
     if (state.nextTableNumber <= 1) {
@@ -74,7 +92,7 @@ export function deserializeLayout(json) {
 
 export function updateSeatCounter() {
     const totalSeats = state.tables.reduce((sum, table) => {
-        if ((table.type === 'seat' || table.type === 'roundSeat') && !table.counterEnabled) {
+        if ((table.type === 'seat' || table.type === 'roundSeat' || table.showCounterToggle) && !table.counterEnabled) {
             return sum;
         }
         return sum + table.seats;
