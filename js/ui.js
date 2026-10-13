@@ -1895,6 +1895,17 @@ if (registerBirthdayInput) {
 if (loginTab) loginTab.addEventListener('click', switchToLogin);
 if (registerTab) registerTab.addEventListener('click', switchToRegister);
 
+document.querySelectorAll('.auth-password-toggle').forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+        const passwordInput = document.getElementById(toggle.dataset.passwordTarget);
+        const isVisible = passwordInput.type === 'text';
+        passwordInput.type = isVisible ? 'password' : 'text';
+        toggle.setAttribute('aria-pressed', String(!isVisible));
+        toggle.setAttribute('aria-label', isVisible ? 'Mostrar senha' : 'Ocultar senha');
+        toggle.innerHTML = `<i class="fa-regular ${isVisible ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"></i>`;
+    });
+});
+
 // Login with Enter key
 if (document.getElementById('loginPassword')) {
     document.getElementById('loginEmail').addEventListener('keypress', (e) => {
@@ -1922,6 +1933,11 @@ if (document.getElementById('registerBirthday')) {
         }
     });
     document.getElementById('registerPassword').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
+            if (registerSubmit) registerSubmit.click();
+        }
+    });
+    document.getElementById('registerPasswordConfirm').addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && document.getElementById('registerForm').style.display !== 'none') {
             if (registerSubmit) registerSubmit.click();
         }
@@ -1955,6 +1971,7 @@ if (registerSubmit) registerSubmit.addEventListener('click', async () => {
     const name = document.getElementById('registerName').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
     const birthday = document.getElementById('registerBirthday').value;
     const birthdayInput = document.getElementById('registerBirthday');
     
@@ -1963,9 +1980,16 @@ if (registerSubmit) registerSubmit.addEventListener('click', async () => {
     registerError.style.display = 'none';
     
     // Validação de campos vazios
-    if (!name || !email || !password || !birthday) {
+    if (!name || !email || !password || !passwordConfirm || !birthday) {
         registerError.textContent = 'Por favor, preencha todos os campos.';
         registerError.style.display = 'block';
+        return;
+    }
+
+    if (password !== passwordConfirm) {
+        registerError.textContent = 'As senhas não coincidem.';
+        registerError.style.display = 'block';
+        document.getElementById('registerPasswordConfirm').focus();
         return;
     }
     
