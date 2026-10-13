@@ -3,12 +3,12 @@ import { state } from './state.js';
 import { updateSeatCounter } from './layout.js';
 
 export const backgroundImage = new Image();
-backgroundImage.src = 'images/plantaBaixa.png';
+backgroundImage.src = 'svg/plantaBaixa.svg';
 
 export function updateBackgroundImage() {
     backgroundImage.src = state.showPlantMeasures
-        ? 'images/plantaBaixa.png'
-        : 'images/plantaBaixaSemMedidas.png';
+    ? 'svg/plantaBaixaCota.svg'
+    : 'svg/plantaBaixa.svg';
 }
 backgroundImage.onload = () => resizeCanvas();
 
@@ -186,7 +186,10 @@ export function createExportCanvas() {
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = Math.max(1, Math.ceil(bounds.right - bounds.left));
     exportCanvas.height = Math.max(1, Math.ceil(bounds.bottom - bounds.top));
-    drawScene(exportCanvas.getContext('2d'), exportCanvas.width, exportCanvas.height, {
+    const exportCtx = exportCanvas.getContext('2d');
+    exportCtx.fillStyle = '#fff';
+    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    drawScene(exportCtx, exportCanvas.width, exportCanvas.height, {
         scale: 1,
         offsetX: -bounds.left,
         offsetY: -bounds.top,

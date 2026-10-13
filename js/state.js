@@ -20,7 +20,7 @@ export const state = {
     alignmentLine: null,
     showGrid: false,
     showMeasures: false,
-    showPlantMeasures: true,
+    showPlantMeasures: false,
     currentUser: null,
     currentUserData: null,
     // id do mapa carregado da nuvem (se houver)
