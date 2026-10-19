@@ -210,16 +210,20 @@ let zoomPercent = 100;
 const ZOOM_MIN = 25;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 10; // percent per step (buttons click)
-const activeTouchPointers = new Map();
-let pinchGesture = null;
+let touchPinchGesture = null;
+let touchGestureActive = false;
+const fullscreenToggle = document.getElementById('fullscreenToggle');
 
-function beginPinchGesture() {
-    const [first, second] = Array.from(activeTouchPointers.values()).slice(0, 2);
+function beginTouchPinch(event) {
+    if (event.targetTouches.length < 2 || touchPinchGesture) return;
+    event.preventDefault();
+    const [first, second] = Array.from(event.targetTouches).slice(0, 2);
     const rect = canvas.getBoundingClientRect();
-    const midpointX = (first.x + second.x) / 2;
-    const midpointY = (first.y + second.y) / 2;
+    const midpointX = (first.clientX + second.clientX) / 2;
+    const midpointY = (first.clientY + second.clientY) / 2;
     const scale = state.canvasScale || 1;
 
+    touchGestureActive = true;
     flushPendingDrag();
     if (dragHistorySnapshot && dragHistorySnapshot !== captureHistoryState()) {
         recordHistory(dragHistorySnapshot);
@@ -232,30 +236,88 @@ function beginPinchGesture() {
     state.multiSelectionRect = null;
     temporaryShiftSelection = false;
 
-    pinchGesture = {
-        startDistance: Math.hypot(second.x - first.x, second.y - first.y),
+    touchPinchGesture = {
+        startDistance: Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY),
         scale,
         focusX: (midpointX - rect.left - state.canvasOffsetX) / scale,
         focusY: (midpointY - rect.top - state.canvasOffsetY) / scale
     };
 }
 
-function updatePinchGesture() {
-    if (!pinchGesture || activeTouchPointers.size < 2) return;
-    const [first, second] = Array.from(activeTouchPointers.values()).slice(0, 2);
+function updateTouchPinch(event) {
+    if (!touchPinchGesture || event.targetTouches.length < 2) return;
+    event.preventDefault();
+    const [first, second] = Array.from(event.targetTouches).slice(0, 2);
     const rect = canvas.getBoundingClientRect();
-    const midpointX = (first.x + second.x) / 2;
-    const midpointY = (first.y + second.y) / 2;
-    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    const midpointX = (first.clientX + second.clientX) / 2;
+    const midpointY = (first.clientY + second.clientY) / 2;
+    const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
     const scale = Math.max(ZOOM_MIN * 0.004, Math.min(ZOOM_MAX * 0.004,
-        pinchGesture.scale * distance / Math.max(1, pinchGesture.startDistance)));
+        touchPinchGesture.scale * distance / Math.max(1, touchPinchGesture.startDistance)));
 
     zoomPercent = scale / 0.004;
     state.canvasScale = scale;
-    state.canvasOffsetX = midpointX - rect.left - pinchGesture.focusX * scale;
-    state.canvasOffsetY = midpointY - rect.top - pinchGesture.focusY * scale;
+    state.canvasOffsetX = midpointX - rect.left - touchPinchGesture.focusX * scale;
+    state.canvasOffsetY = midpointY - rect.top - touchPinchGesture.focusY * scale;
     updateObjectToolbarPosition();
     draw();
+}
+
+function endTouchPinch(event) {
+    if (!touchGestureActive) return;
+    if (event.targetTouches.length >= 2) return;
+    touchPinchGesture = null;
+    if (event.targetTouches.length) return;
+
+    touchGestureActive = false;
+    flushPendingDrag();
+    if (dragHistorySnapshot && dragHistorySnapshot !== captureHistoryState()) {
+        recordHistory(dragHistorySnapshot);
+    }
+    dragHistorySnapshot = null;
+    state.isDragging = false;
+    state.isPanning = false;
+    groupDragOffsets = [];
+    state.alignmentLine = null;
+    draw();
+}
+
+function updateFullscreenToggle() {
+    if (!fullscreenToggle) return;
+    const isFullscreen = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+    fullscreenToggle.setAttribute('aria-pressed', String(isFullscreen));
+    fullscreenToggle.querySelector('span').textContent = isFullscreen ? 'Sair da tela cheia' : 'Tela Cheia';
+    fullscreenToggle.querySelector('i').className = `fas ${isFullscreen ? 'fa-compress' : 'fa-expand'} me-2`;
+}
+
+if (fullscreenToggle) {
+    fullscreenToggle.addEventListener('click', async () => {
+        const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+        const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+        const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+        try {
+            if (fullscreenElement && exitFullscreen) {
+                await exitFullscreen.call(document);
+            } else if (requestFullscreen) {
+                await requestFullscreen.call(document.documentElement, { navigationUI: 'hide' });
+            } else {
+                window.alert('Este navegador não oferece suporte à tela cheia.');
+            }
+        } catch {
+            window.alert('Não foi possível ativar a tela cheia neste navegador.');
+        }
+        updateFullscreenToggle();
+    });
+    document.addEventListener('fullscreenchange', updateFullscreenToggle);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenToggle);
+    updateFullscreenToggle();
+}
+
+if (canvas) {
+    canvas.addEventListener('touchstart', beginTouchPinch, { passive: false });
+    canvas.addEventListener('touchmove', updateTouchPinch, { passive: false });
+    canvas.addEventListener('touchend', endTouchPinch, { passive: false });
+    canvas.addEventListener('touchcancel', endTouchPinch, { passive: false });
 }
 
 function applyZoomPercent(newPercent, focusClientX, focusClientY) {
@@ -925,14 +987,6 @@ if (canvas) {
     canvas.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         canvas.setPointerCapture(e.pointerId);
-        if (e.pointerType === 'touch') {
-            activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            if (activeTouchPointers.size === 2) {
-                beginPinchGesture();
-                return;
-            }
-            if (pinchGesture) return;
-        }
         const { x, y } = getCanvasCoords(e);
         temporaryShiftSelection = state.mode === 'select' && e.shiftKey;
         const clickedTable = findTableAt(x, y);
@@ -1044,13 +1098,7 @@ if (canvas) {
 
     canvas.addEventListener('pointermove', (e) => {
         if (e.pointerType !== 'mouse') e.preventDefault();
-        if (e.pointerType === 'touch' && activeTouchPointers.has(e.pointerId)) {
-            activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            if (pinchGesture) {
-                updatePinchGesture();
-                return;
-            }
-        }
+        if (touchGestureActive && e.pointerType === 'touch') return;
         if (multiSelectionStart) {
             const { x, y } = getCanvasCoords(e);
             state.multiSelectionRect = {
@@ -1094,10 +1142,6 @@ if (canvas) {
     });
 
     const finishCanvasInteraction = (e) => {
-        if (e?.pointerType === 'touch') {
-            activeTouchPointers.delete(e.pointerId);
-            if (pinchGesture) pinchGesture = null;
-        }
         if (e?.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
             canvas.releasePointerCapture(e.pointerId);
         }

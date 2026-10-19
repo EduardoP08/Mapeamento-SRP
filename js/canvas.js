@@ -30,6 +30,8 @@ export function resizeCanvas() {
 
 window.addEventListener('resize', resizeCanvas);
 window.visualViewport?.addEventListener('resize', resizeCanvas);
+document.addEventListener('fullscreenchange', resizeCanvas);
+document.addEventListener('webkitfullscreenchange', resizeCanvas);
 
 function drawTableMeasure(table, targetCtx = ctx) {
     const width = table.width || table.diameter || 0;
