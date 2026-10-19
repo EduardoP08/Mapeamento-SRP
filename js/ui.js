@@ -208,7 +208,7 @@ function finishPendingNewIfRequested() {
 // Zoom state: percent and mapping (100% -> scale 0.4)
 let zoomPercent = 100;
 const ZOOM_MIN = 25;
-const ZOOM_MAX = 200;
+const ZOOM_MAX = 500;
 const ZOOM_STEP = 10; // percent per step (buttons click)
 let touchPinchGesture = null;
 let touchGestureActive = false;
