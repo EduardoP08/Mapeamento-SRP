@@ -16,7 +16,8 @@ export function resizeCanvas() {
     const navbar = document.querySelector('.navbar');
     const top = navbar ? navbar.getBoundingClientRect().bottom : 60;
     const width = Math.max(1, window.innerWidth);
-    const height = Math.max(1, window.innerHeight - top);
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    const height = Math.max(1, viewportHeight - top);
 
     document.documentElement.style.setProperty('--navbar-height', `${top}px`);
     canvas.style.top = `${top}px`;
@@ -28,6 +29,7 @@ export function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
+window.visualViewport?.addEventListener('resize', resizeCanvas);
 
 function drawTableMeasure(table, targetCtx = ctx) {
     const width = table.width || table.diameter || 0;

@@ -210,6 +210,53 @@ let zoomPercent = 100;
 const ZOOM_MIN = 25;
 const ZOOM_MAX = 200;
 const ZOOM_STEP = 10; // percent per step (buttons click)
+const activeTouchPointers = new Map();
+let pinchGesture = null;
+
+function beginPinchGesture() {
+    const [first, second] = Array.from(activeTouchPointers.values()).slice(0, 2);
+    const rect = canvas.getBoundingClientRect();
+    const midpointX = (first.x + second.x) / 2;
+    const midpointY = (first.y + second.y) / 2;
+    const scale = state.canvasScale || 1;
+
+    flushPendingDrag();
+    if (dragHistorySnapshot && dragHistorySnapshot !== captureHistoryState()) {
+        recordHistory(dragHistorySnapshot);
+    }
+    dragHistorySnapshot = null;
+    state.isDragging = false;
+    state.isPanning = false;
+    groupDragOffsets = [];
+    multiSelectionStart = null;
+    state.multiSelectionRect = null;
+    temporaryShiftSelection = false;
+
+    pinchGesture = {
+        startDistance: Math.hypot(second.x - first.x, second.y - first.y),
+        scale,
+        focusX: (midpointX - rect.left - state.canvasOffsetX) / scale,
+        focusY: (midpointY - rect.top - state.canvasOffsetY) / scale
+    };
+}
+
+function updatePinchGesture() {
+    if (!pinchGesture || activeTouchPointers.size < 2) return;
+    const [first, second] = Array.from(activeTouchPointers.values()).slice(0, 2);
+    const rect = canvas.getBoundingClientRect();
+    const midpointX = (first.x + second.x) / 2;
+    const midpointY = (first.y + second.y) / 2;
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    const scale = Math.max(ZOOM_MIN * 0.004, Math.min(ZOOM_MAX * 0.004,
+        pinchGesture.scale * distance / Math.max(1, pinchGesture.startDistance)));
+
+    zoomPercent = scale / 0.004;
+    state.canvasScale = scale;
+    state.canvasOffsetX = midpointX - rect.left - pinchGesture.focusX * scale;
+    state.canvasOffsetY = midpointY - rect.top - pinchGesture.focusY * scale;
+    updateObjectToolbarPosition();
+    draw();
+}
 
 function applyZoomPercent(newPercent, focusClientX, focusClientY) {
     const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newPercent));
@@ -878,6 +925,14 @@ if (canvas) {
     canvas.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         canvas.setPointerCapture(e.pointerId);
+        if (e.pointerType === 'touch') {
+            activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (activeTouchPointers.size === 2) {
+                beginPinchGesture();
+                return;
+            }
+            if (pinchGesture) return;
+        }
         const { x, y } = getCanvasCoords(e);
         temporaryShiftSelection = state.mode === 'select' && e.shiftKey;
         const clickedTable = findTableAt(x, y);
@@ -989,6 +1044,13 @@ if (canvas) {
 
     canvas.addEventListener('pointermove', (e) => {
         if (e.pointerType !== 'mouse') e.preventDefault();
+        if (e.pointerType === 'touch' && activeTouchPointers.has(e.pointerId)) {
+            activeTouchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (pinchGesture) {
+                updatePinchGesture();
+                return;
+            }
+        }
         if (multiSelectionStart) {
             const { x, y } = getCanvasCoords(e);
             state.multiSelectionRect = {
@@ -1032,6 +1094,10 @@ if (canvas) {
     });
 
     const finishCanvasInteraction = (e) => {
+        if (e?.pointerType === 'touch') {
+            activeTouchPointers.delete(e.pointerId);
+            if (pinchGesture) pinchGesture = null;
+        }
         if (e?.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) {
             canvas.releasePointerCapture(e.pointerId);
         }

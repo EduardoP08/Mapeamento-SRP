@@ -467,6 +467,7 @@ canvas {
     display: block;
     max-width: 100vw;
     max-height: calc(100vh - var(--navbar-height));
+    max-height: calc(100dvh - var(--navbar-height));
     background-color: rgb(247, 247, 247);
     cursor: crosshair;
     touch-action: none;

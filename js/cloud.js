@@ -1,7 +1,7 @@
 import { db } from '../firebase.js';
 import { state } from './state.js';
 import { serializeLayout } from './layout.js';
-import { doc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+import { doc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc, addDoc, serverTimestamp, getDocFromServer } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 
 export async function saveMapToCloud(name, mapId = null) {
     if (!state.currentUser) {
@@ -124,3 +124,23 @@ export async function deleteItemFromCloud(itemId) {
     await deleteDoc(doc(db, 'items', itemId));
     return true;
 }
+
+//Teste de leitura de documento do Firestore, para verificar regras de segurança
+window.testarLeitura = async function (colecao, documentoId) {
+    try {
+        const resultado = await getDocFromServer(
+            doc(db, colecao, documentoId)
+        );
+
+        console.log("Leitura permitida:", {
+            caminho: `${colecao}/${documentoId}`,
+            existe: resultado.exists()
+        });
+    } catch (erro) {
+        console.error("Falha na leitura:", {
+            caminho: `${colecao}/${documentoId}`,
+            codigo: erro.code,
+            mensagem: erro.message
+        });
+    }
+};
