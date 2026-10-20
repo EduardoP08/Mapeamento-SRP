@@ -13,8 +13,8 @@ export async function saveMapToCloud(name, mapId = null) {
         elements: serializeLayout(),
         user: {
             id: state.currentUser.uid,
-            name: state.currentUserData?.name,
-            email: state.currentUser.email
+            name: state.currentUserData?.name || state.currentUser.displayName || '',
+            email: state.currentUser.email || ''
         }
     };
 

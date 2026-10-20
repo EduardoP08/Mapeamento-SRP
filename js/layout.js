@@ -104,6 +104,10 @@ export function getItemDetails() {
     const details = {
         squareCount: 0,
         roundCount: 0,
+        buffetCount: 0,
+        cakeTableCount: 0,
+        modularSofaCount: 0,
+        palletSofaCount: 0,
         seatEnabledCount: 0,
         seatDisabledCount: 0,
         roundSeatEnabledCount: 0,
@@ -112,11 +116,22 @@ export function getItemDetails() {
 
     state.tables.forEach(table => {
         if (table.type === 'square') {
-            details.squareCount++;
+            const name = String(table.name).toLowerCase();
+            if (name.includes('buffet')) {
+                details.buffetCount++;
+            } else if (name.includes('bolo')) {
+                details.cakeTableCount++;
+            } else {
+                details.squareCount++;
+            }
         } else if (table.type === 'round') {
             details.roundCount++;
+        } else if (table.sofaBack) {
+            details.modularSofaCount++;
         } else if (table.type === 'seat') {
-            if (table.counterEnabled) {
+            if (String(table.name).toLowerCase().includes('pallet')) {
+                details.palletSofaCount++;
+            } else if (table.counterEnabled) {
                 details.seatEnabledCount++;
             } else {
                 details.seatDisabledCount++;

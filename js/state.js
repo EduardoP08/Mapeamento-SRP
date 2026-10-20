@@ -14,6 +14,7 @@ export const state = {
     isPanning: false,
     panLastX: 0,
     panLastY: 0,
+    alignmentMeasurements: [],
     isDragging: false,
     dragOffsetX: 0,
     dragOffsetY: 0,

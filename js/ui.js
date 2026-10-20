@@ -4,6 +4,7 @@ import { draw, getCanvasCoords, updateBackgroundImage, createExportCanvas } from
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
 import { saveMapToCloud, loadMapsFromCloud, renameMapInCloud, deleteMapFromCloud, saveItemToCloud, loadItemsFromCloud, renameItemInCloud, deleteItemFromCloud } from './cloud.js';
+import { getCloudSaveErrorMessage } from './utils.js';
 import { Table } from './table.js';
 import { menuZoomInBtn, menuZoomOutBtn, showGridBtn, showMeasuresBtn, showPlantMeasuresBtn, showCustomizeMenuBtn, posXInput, posYInput, objectToolbar, rotateLeftBtn, rotateRightBtn, floatingDuplicateBtn, floatingSaveBtn, floatingDeleteBtn, floatingLockBtn, saveItemBtn, savedTables, savedSeats, savedAreas, savedLabels, savedGroups, savedItemModal, savedItemModalTitle, closeSavedItemModal, cancelSavedItemBtn, savedItemName, savedItemError, saveSavedItemBtn, deleteSavedItemBtn, undoBtn, redoBtn, toolbarUndoBtn, toolbarRedoBtn } from './dom.js';
 
@@ -95,10 +96,10 @@ function redo() {
 }
 
 function getSnappedDragPosition(x, y) {
-    let snappedX = x;
-    let snappedY = y;
-    let closestX = SNAP_DISTANCE + 1;
-    let closestY = SNAP_DISTANCE + 1;
+    let closestX = Infinity;
+    let closestY = Infinity;
+    let targetX = null;
+    let targetY = null;
     const snapLines = [];
 
     for (const target of dragSnapTargets) {
@@ -107,32 +108,182 @@ function getSnappedDragPosition(x, y) {
 
         if (distanceX < closestX) {
             closestX = distanceX;
-            snappedX = target.x;
+            targetX = target;
         }
         if (distanceY < closestY) {
             closestY = distanceY;
-            snappedY = target.y;
+            targetY = target;
         }
     }
 
-    if (closestX <= SNAP_DISTANCE) {
+    let snappedX = closestX <= SNAP_DISTANCE ? targetX.x : x;
+    let snappedY = closestY <= SNAP_DISTANCE ? targetY.y : y;
+    let xAlignment = closestX <= SNAP_DISTANCE ? targetX.x : null;
+    let yAlignment = closestY <= SNAP_DISTANCE ? targetY.y : null;
+    const movingBounds = getAlignmentHalfExtents(state.selectedTable);
+    let closestEdgeX = Infinity;
+    let closestEdgeY = Infinity;
+    let snappedEdgeX = null;
+    let snappedEdgeY = null;
+    let edgeLineX = null;
+    let edgeLineY = null;
+
+    for (const target of dragSnapTargets) {
+        const targetBounds = getAlignmentHalfExtents(target);
+        if (Math.abs(snappedY - target.y) <= SNAP_DISTANCE) {
+            for (const direction of [-1, 1]) {
+                const edgeX = target.x + direction * (movingBounds.x + targetBounds.x);
+                const distanceX = Math.abs(x - edgeX);
+                if (distanceX < closestEdgeX) {
+                    closestEdgeX = distanceX;
+                    snappedEdgeX = edgeX;
+                    edgeLineX = target.x + direction * targetBounds.x;
+                }
+            }
+        }
+        if (Math.abs(snappedX - target.x) <= SNAP_DISTANCE) {
+            for (const direction of [-1, 1]) {
+                const edgeY = target.y + direction * (movingBounds.y + targetBounds.y);
+                const distanceY = Math.abs(y - edgeY);
+                if (distanceY < closestEdgeY) {
+                    closestEdgeY = distanceY;
+                    snappedEdgeY = edgeY;
+                    edgeLineY = target.y + direction * targetBounds.y;
+                }
+            }
+        }
+    }
+
+    const equalGapX = findEqualGapSnap(x, snappedY, 'horizontal', movingBounds);
+    const equalGapY = findEqualGapSnap(y, snappedX, 'vertical', movingBounds);
+
+    if (closestEdgeX <= SNAP_DISTANCE && closestEdgeX < closestX) {
+        snappedX = snappedEdgeX;
+        xAlignment = edgeLineX;
+    }
+    if (closestEdgeY <= SNAP_DISTANCE && closestEdgeY < closestY) {
+        snappedY = snappedEdgeY;
+        yAlignment = edgeLineY;
+    }
+    if (equalGapX && equalGapX.distance <= SNAP_DISTANCE && equalGapX.distance < Math.min(closestX, closestEdgeX)) {
+        snappedX = equalGapX.coordinate;
+        xAlignment = snappedX;
+    }
+    if (equalGapY && equalGapY.distance <= SNAP_DISTANCE && equalGapY.distance < Math.min(closestY, closestEdgeY)) {
+        snappedY = equalGapY.coordinate;
+        yAlignment = snappedY;
+    }
+
+    if (xAlignment !== null) {
         snapLines.push({
-            x1: snappedX,
+            x1: xAlignment,
             y1: 0,
-            x2: snappedX,
+            x2: xAlignment,
             y2: canvas.height / (state.canvasScale || 1)
         });
     }
-    if (closestY <= SNAP_DISTANCE) {
+    if (yAlignment !== null) {
         snapLines.push({
             x1: 0,
-            y1: snappedY,
+            y1: yAlignment,
             x2: canvas.width / (state.canvasScale || 1),
-            y2: snappedY
+            y2: yAlignment
         });
     }
 
-    return { x: snappedX, y: snappedY, snapLines };
+    const measurements = [
+        ...getAlignmentGapMeasurements('horizontal', snappedX, snappedY, movingBounds),
+        ...getAlignmentGapMeasurements('vertical', snappedY, snappedX, movingBounds)
+    ];
+
+    return { x: snappedX, y: snappedY, snapLines, measurements };
+}
+
+function findEqualGapSnap(position, crossPosition, orientation, movingBounds) {
+    const axis = orientation === 'horizontal' ? 'x' : 'y';
+    const crossAxis = orientation === 'horizontal' ? 'y' : 'x';
+    const extentAxis = orientation === 'horizontal' ? 'x' : 'y';
+    const alignedTargets = dragSnapTargets
+        .filter(target => Math.abs(crossPosition - target[crossAxis]) <= SNAP_DISTANCE)
+        .sort((first, second) => first[axis] - second[axis]);
+    let bestSnap = null;
+
+    for (let index = 0; index < alignedTargets.length - 1; index++) {
+        const first = alignedTargets[index];
+        const second = alignedTargets[index + 1];
+        const firstExtent = getAlignmentHalfExtents(first)[extentAxis];
+        const secondExtent = getAlignmentHalfExtents(second)[extentAxis];
+        const gap = second[axis] - secondExtent - (first[axis] + firstExtent);
+        if (gap <= 0.5) continue;
+
+        const candidates = [
+            first[axis] - firstExtent - gap - movingBounds[extentAxis],
+            second[axis] + secondExtent + gap + movingBounds[extentAxis]
+        ];
+        candidates.forEach(coordinate => {
+            const distance = Math.abs(position - coordinate);
+            if (!bestSnap || distance < bestSnap.distance) {
+                bestSnap = { coordinate, distance };
+            }
+        });
+    }
+
+    return bestSnap;
+}
+
+function getAlignmentGapMeasurements(orientation, position, crossPosition, movingBounds) {
+    const axis = orientation === 'horizontal' ? 'x' : 'y';
+    const crossAxis = orientation === 'horizontal' ? 'y' : 'x';
+    const extentAxis = orientation === 'horizontal' ? 'x' : 'y';
+    const objects = dragSnapTargets
+        .filter(target => Math.abs(crossPosition - target[crossAxis]) <= SNAP_DISTANCE)
+        .map(target => ({
+            center: target[axis],
+            crossCenter: target[crossAxis],
+            extent: getAlignmentHalfExtents(target)[extentAxis]
+        }));
+    objects.push({
+        center: position,
+        crossCenter: crossPosition,
+        extent: movingBounds[extentAxis]
+    });
+    objects.sort((first, second) => first.center - second.center);
+
+    const measurements = [];
+    for (let index = 0; index < objects.length - 1; index++) {
+        const first = objects[index];
+        const second = objects[index + 1];
+        const firstEdge = first.center + first.extent;
+        const secondEdge = second.center - second.extent;
+        const distance = secondEdge - firstEdge;
+        if (distance <= 0.5) continue;
+
+        const measurement = {
+            x: orientation === 'horizontal' ? (firstEdge + secondEdge) / 2 : (first.crossCenter + second.crossCenter) / 2,
+            y: orientation === 'horizontal' ? (first.crossCenter + second.crossCenter) / 2 : (firstEdge + secondEdge) / 2,
+            distance,
+            orientation
+        };
+        measurements.push(measurement);
+    }
+    return measurements;
+}
+
+function getAlignmentHalfExtents(table) {
+    if (['round', 'roundSeat', 'customCircleArea', 'customSemiCircleArea'].includes(table.type)) {
+        const radius = table.diameter / 2;
+        return { x: radius, y: radius };
+    }
+
+    const width = table.type === 'label' ? table.name.length * table.fontSize * 0.6 : table.width;
+    const height = table.type === 'label' ? table.fontSize : table.height;
+    const angle = table.type === 'label' ? 0 : table.angle * Math.PI / 180;
+    const cosine = Math.abs(Math.cos(angle));
+    const sine = Math.abs(Math.sin(angle));
+    return {
+        x: cosine * width / 2 + sine * height / 2,
+        y: sine * width / 2 + cosine * height / 2
+    };
 }
 
 function applyPendingDrag() {
@@ -153,6 +304,7 @@ function applyPendingDrag() {
         state.selectedTable.y = snappedPosition.y;
     }
     state.alignmentLine = snappedPosition.snapLines;
+    state.alignmentMeasurements = snappedPosition.measurements;
     draw();
 }
 
@@ -185,6 +337,7 @@ function flushPendingDrag() {
             state.selectedTable.y = snappedPosition.y;
         }
         state.alignmentLine = snappedPosition.snapLines;
+        state.alignmentMeasurements = snappedPosition.measurements;
     }
     pendingDragX = null;
     pendingDragY = null;
@@ -279,6 +432,7 @@ function endTouchPinch(event) {
     state.isPanning = false;
     groupDragOffsets = [];
     state.alignmentLine = null;
+    state.alignmentMeasurements = [];
     draw();
 }
 
@@ -1057,9 +1211,7 @@ if (canvas) {
                 pendingDragX = selectedTable.x;
                 pendingDragY = selectedTable.y;
                 dragHistorySnapshot = captureHistoryState();
-                dragSnapTargets = state.tables
-                    .filter(table => table !== selectedTable)
-                    .map(table => ({ x: table.x, y: table.y }));
+                dragSnapTargets = state.tables.filter(table => table !== selectedTable);
                 state.isDragging = true;
                 state.dragOffsetX = x - selectedTable.x;
                 state.dragOffsetY = y - selectedTable.y;
@@ -1091,6 +1243,7 @@ if (canvas) {
                 recordHistory();
                 const index = state.tables.indexOf(tableToDelete);
                 state.tables.splice(index, 1);
+                updateNumberCountersAfterDeletion([tableToDelete]);
                 draw();
             }
         }
@@ -1165,6 +1318,7 @@ if (canvas) {
         groupDragOffsets = [];
         state.isPanning = false;
         state.alignmentLine = null;
+        state.alignmentMeasurements = [];
         if (state.selectedTable && posXInput && posYInput) {
             posXInput.value = Math.round(state.selectedTable.x);
             posYInput.value = Math.round(state.selectedTable.y);
@@ -1194,6 +1348,7 @@ if (canvas) {
         groupDragOffsets = [];
         state.isPanning = false;
         state.alignmentLine = null;
+        state.alignmentMeasurements = [];
         state.hoveredTable = null;
         draw();
     });
@@ -1808,12 +1963,39 @@ function deleteSelectedItems() {
     recordHistory();
     const selectedSet = new Set(selectedItems);
     state.tables = state.tables.filter(table => !selectedSet.has(table));
+    updateNumberCountersAfterDeletion(selectedItems);
     state.selectedTables = [];
     state.selectedTable = null;
     state.groupLocked = false;
     selectTable(null);
     hideObjectToolbar();
     draw();
+}
+
+function updateNumberCountersAfterDeletion(deletedItems) {
+    const removedHighestTable = deletedItems.some(table => {
+        const match = /^(\d+)$/.exec(String(table.name));
+        return match && Number(match[1]) === state.nextTableNumber - 1;
+    });
+    const removedHighestModularSofa = deletedItems.some(table => {
+        const match = /^M(\d+)$/.exec(String(table.name));
+        return table.sofaBack && match && Number(match[1]) === state.nextModularSofaNumber - 1;
+    });
+
+    if (removedHighestTable) {
+        const highestRemaining = state.tables.reduce((highest, table) => {
+            const match = /^(\d+)$/.exec(String(table.name));
+            return match ? Math.max(highest, Number(match[1])) : highest;
+        }, 0);
+        state.nextTableNumber = highestRemaining + 1;
+    }
+    if (removedHighestModularSofa) {
+        const highestRemaining = state.tables.reduce((highest, table) => {
+            const match = table.sofaBack && /^M(\d+)$/.exec(String(table.name));
+            return match ? Math.max(highest, Number(match[1])) : highest;
+        }, 0);
+        state.nextModularSofaNumber = highestRemaining + 1;
+    }
 }
 
 if (deleteBtn) deleteBtn.addEventListener('click', deleteSelectedItems);
@@ -1961,22 +2143,32 @@ if (addLabelBtn) addLabelBtn.addEventListener('click', () => {
     draw();
 });
 
-seatCounter.addEventListener('mouseover', (e) => {
+seatCounter.addEventListener('mouseover', () => {
     const details = getItemDetails();
-    tooltip.innerHTML = `
-        <strong>Quantidade de Itens:</strong><br>
-        Mesas Quadradas: ${details.squareCount}<br>
-        Mesas Redondas: ${details.roundCount}<br>
-        Assentos (habilitados): ${details.seatEnabledCount}<br>
-        Assentos (desabilitados): ${details.seatDisabledCount}<br>
-        Assentos Redondos (habilitados): ${details.roundSeatEnabledCount}<br>
-        Assentos Redondos (desabilitados): ${details.roundSeatDisabledCount}
-    `;
-    // Posicionar o popover abaixo do contador
-    const rect = seatCounter.getBoundingClientRect();
-    tooltip.style.left = `${rect.left}px`;
-    tooltip.style.top = `${rect.bottom + 5}px`;
+    const rows = [
+        ['Mesas quadradas', details.squareCount],
+        ['Mesas redondas', details.roundCount],
+        ['Mesas de buffet', details.buffetCount],
+        ['Mesas do bolo', details.cakeTableCount],
+        ['Sofás modulares', details.modularSofaCount],
+        ['Sofás pallet', details.palletSofaCount],
+        ['Assentos com contagem ativa', details.seatEnabledCount],
+        ['Assentos com contagem desativada', details.seatDisabledCount],
+        ['Assentos redondos com contagem ativa', details.roundSeatEnabledCount],
+        ['Assentos redondos com contagem desativada', details.roundSeatDisabledCount]
+    ].filter(([, count]) => count > 0);
+    tooltip.innerHTML = `<div class="popover-tooltip-title">Itens no mapa</div>${rows.length
+        ? `<div class="popover-tooltip-list">${rows.map(([label, count]) => `<div class="popover-tooltip-row"><span>${label}</span><strong>${count}</strong></div>`).join('')}</div>`
+        : '<div class="popover-tooltip-empty">Nenhum item no mapa</div>'}`;
     tooltip.style.display = 'block';
+    const rect = seatCounter.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const left = Math.min(Math.max(12, rect.left), window.innerWidth - tooltipRect.width - 12);
+    const top = rect.bottom + tooltipRect.height + 12 <= window.innerHeight
+        ? rect.bottom + 6
+        : Math.max(12, rect.top - tooltipRect.height - 6);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
 });
 
 if (seatCounter) seatCounter.addEventListener('mouseout', () => {
@@ -2155,6 +2347,15 @@ if (logoutBtn) logoutBtn.addEventListener('click', async () => {
 });
 
 saveCloudSubmit.addEventListener('click', async () => {
+    if (!state.currentUser) {
+        hideCloudModal();
+        switchToLogin();
+        showAuthModal();
+        loginError.textContent = 'Entre na sua conta para salvar mapas na nuvem. Depois do login, tente salvar novamente.';
+        loginError.style.display = 'block';
+        return;
+    }
+
     const name = mapNameInput.value.trim();
     if (!name) {
         cloudError.textContent = 'Nome do mapa é obrigatório.';
@@ -2195,7 +2396,8 @@ saveCloudSubmit.addEventListener('click', async () => {
             alert('Mapa salvo com sucesso!');
         }
     } catch (error) {
-        cloudError.textContent = 'Erro ao salvar mapa.';
+        console.error('Erro ao salvar mapa:', error);
+        cloudError.textContent = getCloudSaveErrorMessage(error);
         cloudError.style.display = 'block';
     }
 });

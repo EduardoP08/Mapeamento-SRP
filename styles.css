@@ -180,7 +180,7 @@ body {
 }
 
 #userDisplay {
-    display: flex !important;
+    display: flex;
     align-items: center;
 }
 
@@ -279,17 +279,50 @@ body {
 
 /* Melhor visual para o popover do contador de assentos */
 .popover-tooltip {
-    position: absolute;
+    position: fixed;
     background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.12);
-    padding: 8px 10px;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border: 1px solid #d9dee5;
+    padding: 12px 14px;
+    border-radius: 7px;
+    box-shadow: 0 10px 28px rgba(20, 31, 45, 0.18);
     z-index: 1200;
     pointer-events: none;
-    min-width: 220px;
-    white-space: nowrap;
-    font-size: 0.9rem;
+    min-width: min(250px, calc(100vw - 24px));
+    max-width: min(320px, calc(100vw - 24px));
+    color: #253342;
+    font-size: 0.82rem;
+}
+
+.popover-tooltip-title {
+    margin-bottom: 7px;
+    color: #172b3a;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.popover-tooltip-list {
+    display: grid;
+    gap: 2px;
+}
+
+.popover-tooltip-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+    border-top: 1px solid #edf0f3;
+    line-height: 1.35;
+}
+
+.popover-tooltip-row strong {
+    flex: 0 0 auto;
+    color: #087e78;
+    font-variant-numeric: tabular-nums;
+}
+
+.popover-tooltip-empty {
+    color: #657484;
 }
 
 .drawer {
@@ -1428,7 +1461,7 @@ canvas {
     }
     
     #userDisplay {
-        display: flex !important;
+        display: flex;
         align-items: center;
         gap: 1px;
         flex-wrap: nowrap;

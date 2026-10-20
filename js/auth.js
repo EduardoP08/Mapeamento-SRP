@@ -54,13 +54,18 @@ export async function loginWithGoogle() {
         const user = result.user;
 
         const userDoc = await getDoc(doc(db, 'users', user.uid));
+        let userData;
         if (!userDoc.exists()) {
-            await setDoc(doc(db, 'users', user.uid), {
+            userData = {
                 name: user.displayName || '',
                 email: user.email,
                 birthday: null
-            });
+            };
+            await setDoc(doc(db, 'users', user.uid), userData);
+        } else {
+            userData = userDoc.data();
         }
+        state.currentUserData = userData;
 
         return user;
     } catch (error) {

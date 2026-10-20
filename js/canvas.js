@@ -140,6 +140,28 @@ function drawScene(targetCtx, targetWidth, targetHeight, { scale, offsetX, offse
         targetCtx.setLineDash([]);
         targetCtx.globalAlpha = 1;
     }
+    if (includeOverlays && state.alignmentMeasurements?.length) {
+        targetCtx.save();
+        targetCtx.font = `${12 / scale}px Arial`;
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'middle';
+        state.alignmentMeasurements.forEach(measurement => {
+            const distance = `${measurement.distance.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} cm`;
+            const x = measurement.x + (measurement.orientation === 'vertical' ? 14 / scale : 0);
+            const y = measurement.y - (measurement.orientation === 'horizontal' ? 12 / scale : 0);
+            const textWidth = targetCtx.measureText(distance).width;
+            const paddingX = 5 / scale;
+            const paddingY = 3 / scale;
+            targetCtx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+            targetCtx.strokeStyle = '#00a2ff';
+            targetCtx.lineWidth = 1 / scale;
+            targetCtx.fillRect(x - textWidth / 2 - paddingX, y - 8 / scale - paddingY, textWidth + paddingX * 2, 16 / scale + paddingY * 2);
+            targetCtx.strokeRect(x - textWidth / 2 - paddingX, y - 8 / scale - paddingY, textWidth + paddingX * 2, 16 / scale + paddingY * 2);
+            targetCtx.fillStyle = '#17435c';
+            targetCtx.fillText(distance, x, y);
+        });
+        targetCtx.restore();
+    }
     if (includeOverlays && state.multiSelectionRect) {
         const selection = state.multiSelectionRect;
         targetCtx.strokeStyle = '#1976d2';
