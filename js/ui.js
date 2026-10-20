@@ -743,9 +743,7 @@ async function saveSelectedItem() {
 
 function createTableFromSavedItem(itemData) {
     const item = typeof itemData.item === 'string' ? JSON.parse(itemData.item) : itemData.item;
-    const customizationName = String(item.name ?? '');
-    const isNumberedTable = (item.type === 'square' || item.type === 'round') && /^\d+$/.test(customizationName.trim());
-    const tableName = item.sofaBack ? nextModularSofaName() : isNumberedTable ? String(state.nextTableNumber++) : customizationName;
+    const tableName = getDuplicateTableName(item);
     const { x, y } = getWindowCenterCanvasCoords();
     const table = new Table(
         item.type, x, y, item.width, item.height, item.diameter ?? (item.radius ? item.radius * 2 : 0), item.angle,
@@ -1455,11 +1453,23 @@ function selectTablesInRect(rect) {
 }
 
 function nextModularSofaName() {
-    return `M${state.nextModularSofaNumber++}`;
+    return `SM${state.nextModularSofaNumber++}`;
 }
 
-function cloneTable(table, x, y, name = table.name) {
-    const cloneName = table.sofaBack ? nextModularSofaName() : name;
+function isSequentiallyNumberedTable(table) {
+    const name = String(table.name || '').toLocaleLowerCase('pt-BR');
+    const isSpecialSquare = name.includes('buffet') || name.includes('bolo');
+    return (table.type === 'square' && !isSpecialSquare) || (table.type === 'round' && [6, 8].includes(Number(table.seats)));
+}
+
+function getDuplicateTableName(table) {
+    if (table.sofaBack) return nextModularSofaName();
+    if (isSequentiallyNumberedTable(table)) return String(state.nextTableNumber++);
+    return table.name ?? '';
+}
+
+function cloneTable(table, x, y) {
+    const cloneName = getDuplicateTableName(table);
     return new table.constructor(table.type, x, y, table.width, table.height, table.diameter, table.angle, table.color, cloneName, table.seats, table.nameColor, table.cornerSeats, table.seatColor, table.counterEnabled, table.fontSize, false, table.lineWidth, table.lineStyle, table.doubleEnded, table.showCounterToggle, table.sofaBack);
 }
 
@@ -1480,7 +1490,7 @@ function createTablesFromSavedGroup(itemData) {
     const center = getWindowCenterCanvasCoords();
     const groupId = `saved-group-${nextGroupId++}`;
     return group.items.map(item => {
-        const table = new Table(item.type, center.x + item.x, center.y + item.y, item.width, item.height, item.diameter ?? (item.radius ? item.radius * 2 : 0), item.angle, item.color, item.sofaBack ? nextModularSofaName() : item.name, item.seats, item.nameColor, item.cornerSeats, item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle, item.lineWidth, item.lineStyle, item.doubleEnded, item.showCounterToggle, item.sofaBack);
+        const table = new Table(item.type, center.x + item.x, center.y + item.y, item.width, item.height, item.diameter ?? (item.radius ? item.radius * 2 : 0), item.angle, item.color, getDuplicateTableName(item), item.seats, item.nameColor, item.cornerSeats, item.seatColor, item.counterEnabled, item.fontSize, item.isHalfCircle, item.lineWidth, item.lineStyle, item.doubleEnded, item.showCounterToggle, item.sofaBack);
         table.groupId = groupId;
         return table;
     });
@@ -1489,7 +1499,7 @@ function createTablesFromSavedGroup(itemData) {
 function duplicateSelectedGroup() {
     if (!state.selectedTables.length) return;
     recordHistory();
-    const copies = state.selectedTables.map(table => cloneTable(table, table.x + 50, table.y + 50, table.name));
+    const copies = state.selectedTables.map(table => cloneTable(table, table.x + 50, table.y + 50));
     const groupId = `group-${nextGroupId++}`;
     copies.forEach(table => { table.groupId = groupId; });
     state.tables.push(...copies);
@@ -1920,10 +1930,7 @@ duplicateBtn.addEventListener('click', () => {
     }
 
     recordHistory();
-    const shouldKeepName = ['seat', 'roundSeat', 'customArea', 'customCircleArea', 'customSemiCircleArea', 'label', 'flowArrow'].includes(state.selectedTable.type);
-    const newName = state.selectedTable.sofaBack
-        ? nextModularSofaName()
-        : shouldKeepName ? state.selectedTable.name : String(state.nextTableNumber++);
+    const newName = getDuplicateTableName(state.selectedTable);
 
     const newTable = new state.selectedTable.constructor(
         state.selectedTable.type,
@@ -1975,23 +1982,23 @@ function deleteSelectedItems() {
 function updateNumberCountersAfterDeletion(deletedItems) {
     const removedHighestTable = deletedItems.some(table => {
         const match = /^(\d+)$/.exec(String(table.name));
-        return match && Number(match[1]) === state.nextTableNumber - 1;
+        return isSequentiallyNumberedTable(table) && match && Number(match[1]) === state.nextTableNumber - 1;
     });
     const removedHighestModularSofa = deletedItems.some(table => {
-        const match = /^M(\d+)$/.exec(String(table.name));
+        const match = /^(?:SM|M)(\d+)$/.exec(String(table.name));
         return table.sofaBack && match && Number(match[1]) === state.nextModularSofaNumber - 1;
     });
 
     if (removedHighestTable) {
         const highestRemaining = state.tables.reduce((highest, table) => {
             const match = /^(\d+)$/.exec(String(table.name));
-            return match ? Math.max(highest, Number(match[1])) : highest;
+            return isSequentiallyNumberedTable(table) && match ? Math.max(highest, Number(match[1])) : highest;
         }, 0);
         state.nextTableNumber = highestRemaining + 1;
     }
     if (removedHighestModularSofa) {
         const highestRemaining = state.tables.reduce((highest, table) => {
-            const match = table.sofaBack && /^M(\d+)$/.exec(String(table.name));
+            const match = table.sofaBack && /^(?:SM|M)(\d+)$/.exec(String(table.name));
             return match ? Math.max(highest, Number(match[1])) : highest;
         }, 0);
         state.nextModularSofaNumber = highestRemaining + 1;
@@ -2059,7 +2066,7 @@ function addPresetItem({ type, name, width = 0, height = 0, diameter = 0, seats 
     const { x, y } = getWindowCenterCanvasCoords();
     recordHistory();
     const tableName = sofaBack ? nextModularSofaName() : numberedTable ? String(state.nextTableNumber++) : name;
-    const table = new Table(type, x, y, width, height, diameter, 0, color, tableName, seats, '#000000', true, '#e7e7e7', counterEnabled, 54, false, lineWidth, lineStyle, doubleEnded, showCounterToggle, sofaBack);
+    const table = new Table(type, x, y, width, height, diameter, 0, color, tableName, seats, '#000000', true, '#e7e7e7', counterEnabled, sofaBack ? 42 : 54, false, lineWidth, lineStyle, doubleEnded, showCounterToggle, sofaBack);
     state.tables.push(table);
     selectTable(table);
     draw();
@@ -2068,7 +2075,7 @@ function addPresetItem({ type, name, width = 0, height = 0, diameter = 0, seats 
 if (addBuffetTableBtn) addBuffetTableBtn.addEventListener('click', () => addPresetItem({ type: 'square', name: 'Mesa de Buffet', width: 100, height: 240, color: '#F5A6A6' }));
 if (addCakeTableBtn) addCakeTableBtn.addEventListener('click', () => addPresetItem({ type: 'square', name: 'Mesa do Bolo', width: 110, height: 220, color: '#A9C7F5' }));
 if (addRound8TableBtn) addRound8TableBtn.addEventListener('click', () => addPresetItem({ type: 'round', name: 'Mesa Redonda 8', diameter: 144, seats: 8, numberedTable: true }));
-if (addBistroTableBtn) addBistroTableBtn.addEventListener('click', () => addPresetItem({ type: 'round', name: 'Mesa Bistrô', diameter: 63, seats: 3, showCounterToggle: true }));
+if (addBistroTableBtn) addBistroTableBtn.addEventListener('click', () => addPresetItem({ type: 'round', name: '', diameter: 63, seats: 3, showCounterToggle: true }));
 if (addModularSofaBtn) addModularSofaBtn.addEventListener('click', () => addPresetItem({ type: 'seat', name: 'Sofá Modular', width: 100, height: 90, seats: 2, color: '#c6ad91', sofaBack: true }));
 if (addPalletSofaBtn) addPalletSofaBtn.addEventListener('click', () => addPresetItem({ type: 'seat', name: 'Sofá Pallet', width: 240, height: 90, seats: 4, color: '#b28a61' }));
 if (addFlowArrowBtn) addFlowArrowBtn.addEventListener('click', () => addPresetItem({ type: 'flowArrow', name: 'Seta', width: 100, height: 200, color: '#c74747' }));

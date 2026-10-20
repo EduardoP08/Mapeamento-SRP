@@ -69,7 +69,7 @@ export function deserializeLayout(json) {
     state.nextModularSofaNumber = typeof data.nextModularSofaNumber === 'number' ? data.nextModularSofaNumber : 1;
     if (typeof data.nextModularSofaNumber !== 'number') {
         state.tables.filter(table => table.sofaBack).forEach(table => {
-            const match = /^M(\d+)$/.exec(table.name);
+            const match = /^(?:SM|M)(\d+)$/.exec(table.name);
             if (match) state.nextModularSofaNumber = Math.max(state.nextModularSofaNumber, Number(match[1]) + 1);
         });
     }
