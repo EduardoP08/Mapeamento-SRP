@@ -97,7 +97,7 @@ export function updateSeatCounter() {
         }
         return sum + table.seats;
     }, 0);
-    seatCounter.textContent = `Assentos: ${totalSeats}`;
+    seatCounter.textContent = `Convidados: ${totalSeats}`;
 }
 
 export function getItemDetails() {

@@ -22,7 +22,7 @@
                     <input type="text" id="toolbarMapName" class="form-control" value="Novo Mapa" placeholder="Nome do mapeamento">
                 </div>
                 
-                <span id="seatCounter" class="text-white fw-bold toolbar-counter">Assentos: 0</span>
+                <span id="seatCounter" class="text-white fw-bold toolbar-counter">Convidados: 0</span>
                 
                 <div id="login" class="ms-auto">
                     <button class="btn btn-outline-light btn-sm" id="loginBtn">
@@ -78,7 +78,7 @@
                                 <li><button class="dropdown-item" id="exportPngBtn">PNG</button></li>
                                 <li><button class="dropdown-item" id="exportJpgBtn">JPG</button></li>
                                 <li><button class="dropdown-item" id="exportPdfBtn">PDF</button></li>
-                                <li><button class="dropdown-item" id="exportJsonBtn">JSON</button></li>
+                                <li><button class="dropdown-item" id="exportJsonBtn">JSON <span class="text-muted ms-2">Projeto</span></button></li>
                             </ul>
                         </li>
                     </ul>
@@ -296,7 +296,7 @@
                 </div>
             </div>
         </div>
-        <label for="counterEnabled" class="checkbox-inline" id="counterEnabledLabel"><input type="checkbox" id="counterEnabled" checked><span>Contabilizar assento</span></label>
+        <label for="counterEnabled" class="checkbox-inline" id="counterEnabledLabel"><input type="checkbox" id="counterEnabled" checked><span>Contabilizar convidado</span></label>
         <div class="customize-actions"><button id="duplicate">Duplicar</button><button id="delete">Excluir</button></div>
     </div>
     <input type="file" id="fileInput" accept="application/json" style="display:none;">
