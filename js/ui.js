@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, diameterLabel, diameterInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addCustomSemiCircleAreaBtn, addFlowArrowBtn, addBuffetTableBtn, addCakeTableBtn, addRound8TableBtn, addBistroTableBtn, addModularSofaBtn, addPalletSofaBtn, arrowLineWidthInput, arrowLineStyleInput, doubleEndedInput, addLabelBtn, seatCounter, exportPdfBtn } from './dom.js';
+import { canvas, sidebar, drawer, toggleDrawerBtn, selectModeBtn, multiSelectModeBtn, deleteModeBtn, deleteModeMessage, deleteAllBtn, fileInput, nameInput, loginBtn, userDisplay, userName, logoutBtn, authModal, closeAuthModal, loginTab, registerTab, loginForm, registerForm, loginSubmit, registerSubmit, googleLogin, loginError, registerError, cloudModal, closeCloudModal, cloudModalTitle, saveCloudForm, loadCloudList, mapNameInput, saveCloudSubmit, mapsList, cloudError, toolbarMapName, saveAsNewBtn, zoomInBtn, zoomOutBtn, fontSizeInput, widthLabel, widthInput, heightLabel, heightInput, diameterLabel, diameterInput, angleInput, angleNumberInput, colorInput, colorLabel, nameColorInput, seatColorInput, counterEnabledInput, counterEnabledLabel, cornerSeatsInput, cornerSeatsLabel, seatsInput, seatsLabel, seatColorLabel, seatWarning, duplicateBtn, deleteBtn, addSquareBtn, addRoundBtn, addSeatBtn, addRoundSeatBtn, addCustomAreaBtn, addCustomCircleAreaBtn, addCustomSemiCircleAreaBtn, addFlowArrowBtn, addBuffetTableBtn, addCakeTableBtn, addRound8TableBtn, addBistroTableBtn, addModularSofaBtn, addPalletSofaBtn, arrowLineWidthInput, arrowLineStyleInput, doubleEndedInput, addLabelBtn, seatCounter, exportPdfBtn, newMapModal, saveAndContinueNewMapBtn, continueNewMapBtn, cancelNewMapBtn } from './dom.js';
 import { draw, getCanvasCoords, updateBackgroundImage, createExportCanvas } from './canvas.js';
 import { serializeLayout, deserializeLayout, getItemDetails } from './layout.js';
 import { loginUser, registerUser, loginWithGoogle, logoutUser } from './auth.js';
@@ -385,6 +385,28 @@ function finishPendingNewIfRequested() {
         clearHistory();
         draw();
     }
+}
+
+function resetToNewMap() {
+    pendingNewAfterSave = false;
+    state.tables = [];
+    state.nextTableNumber = 1;
+    state.nextModularSofaNumber = 1;
+    state.selectedTable = null;
+    state.selectedTables = [];
+    state.currentCloudMapId = null;
+    sidebar.classList.remove('show');
+    if (toolbarMapName) toolbarMapName.value = 'Novo mapa';
+    clearHistory();
+    draw();
+}
+
+function showNewMapModal() {
+    if (newMapModal) newMapModal.classList.add('show');
+}
+
+function hideNewMapModal() {
+    if (newMapModal) newMapModal.classList.remove('show');
 }
 // Zoom state: percent and mapping (100% -> scale 0.4)
 let zoomPercent = 100;
@@ -1699,23 +1721,28 @@ if (fileInput) fileInput.addEventListener('change', handleFileInputChange);
 
 // Toolbar file actions
 if (newMapBtn) newMapBtn.addEventListener('click', () => {
-    const wantToSave = confirm('Deseja salvar o mapa atual antes de criar um novo? OK = Salvar, Cancel = Não salvar');
-    if (wantToSave) {
-        pendingNewAfterSave = true;
-        saveMode = 'cloud';
-        showCloudModal(true);
-    } else {
-        if (confirm('Tem certeza que deseja criar um novo mapa? Isso apagará o atual.')) {
-            state.tables = [];
-            state.nextTableNumber = 1;
-            state.nextModularSofaNumber = 1;
-            state.selectedTable = null;
-            state.currentCloudMapId = null;
-            sidebar.classList.remove('show');
-            if (toolbarMapName) toolbarMapName.value = 'Novo mapa';
-            clearHistory();
-            draw();
-        }
+    showNewMapModal();
+});
+
+if (saveAndContinueNewMapBtn) saveAndContinueNewMapBtn.addEventListener('click', () => {
+    hideNewMapModal();
+    pendingNewAfterSave = true;
+    saveMode = 'cloud';
+    showCloudModal(true);
+});
+
+if (continueNewMapBtn) continueNewMapBtn.addEventListener('click', () => {
+    hideNewMapModal();
+    resetToNewMap();
+});
+
+if (cancelNewMapBtn) cancelNewMapBtn.addEventListener('click', hideNewMapModal);
+if (newMapModal) newMapModal.addEventListener('click', (event) => {
+    if (event.target === newMapModal) hideNewMapModal();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && newMapModal?.classList.contains('show')) {
+        hideNewMapModal();
     }
 });
 
@@ -2468,9 +2495,13 @@ saveCloudSubmit.addEventListener('click', async () => {
         cloudError.style.display = 'block';
     }
 });
-closeCloudModal.addEventListener('click', hideCloudModal);
+closeCloudModal.addEventListener('click', () => {
+    pendingNewAfterSave = false;
+    hideCloudModal();
+});
 cloudModal.addEventListener('click', (e) => {
     if (e.target === cloudModal) {
+        pendingNewAfterSave = false;
         hideCloudModal();
     }
 });

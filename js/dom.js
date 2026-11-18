@@ -125,3 +125,7 @@ export const savedItemName = document.getElementById('savedItemName');
 export const savedItemError = document.getElementById('savedItemError');
 export const saveSavedItemBtn = document.getElementById('saveSavedItemBtn');
 export const deleteSavedItemBtn = document.getElementById('deleteSavedItemBtn');
+export const newMapModal = document.getElementById('newMapModal');
+export const saveAndContinueNewMapBtn = document.getElementById('saveAndContinueNewMapBtn');
+export const continueNewMapBtn = document.getElementById('continueNewMapBtn');
+export const cancelNewMapBtn = document.getElementById('cancelNewMapBtn');

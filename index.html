@@ -391,6 +391,30 @@
             </div>
         </div>
     </div>
+    <div id="newMapModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="newMapModalTitle">
+        <div class="modal-content new-map-modal-content">
+            <div class="new-map-modal-header">
+                <div class="new-map-modal-icon" aria-hidden="true">
+                    <i class="fas fa-file-circle-plus"></i>
+                </div>
+                <div>
+                    <h4 id="newMapModalTitle" class="mb-1">Criar novo mapa</h4>
+                    <p class="new-map-modal-description mb-0">O que deseja fazer com o mapa atual?</p>
+                </div>
+            </div>
+            <div class="new-map-modal-actions">
+                <button type="button" id="cancelNewMapBtn" class="btn new-map-btn new-map-btn-secondary">
+                    <i class="fas fa-xmark me-2" aria-hidden="true"></i>Cancelar
+                </button>
+                <button type="button" id="continueNewMapBtn" class="btn new-map-btn new-map-btn-warning">
+                    <i class="fas fa-arrow-right me-2" aria-hidden="true"></i>Continuar sem salvar
+                </button>
+                <button type="button" id="saveAndContinueNewMapBtn" class="btn new-map-btn new-map-btn-primary">
+                    <i class="fas fa-save me-2" aria-hidden="true"></i>Salvar e continuar
+                </button>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module" src="script.js"></script>
