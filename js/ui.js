@@ -402,11 +402,19 @@ function resetToNewMap() {
 }
 
 function showNewMapModal() {
-    if (newMapModal) newMapModal.classList.add('show');
+    if (!newMapModal) return;
+    newMapModal.classList.add('show');
+    newMapModal.style.display = 'flex';
+    newMapModal.style.alignItems = 'center';
+    newMapModal.style.justifyContent = 'center';
+    newMapModal.setAttribute('aria-hidden', 'false');
 }
 
 function hideNewMapModal() {
-    if (newMapModal) newMapModal.classList.remove('show');
+    if (!newMapModal) return;
+    newMapModal.classList.remove('show');
+    newMapModal.style.display = 'none';
+    newMapModal.setAttribute('aria-hidden', 'true');
 }
 // Zoom state: percent and mapping (100% -> scale 0.4)
 let zoomPercent = 100;
