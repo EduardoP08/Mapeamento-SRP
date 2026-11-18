@@ -206,6 +206,17 @@ body {
     background-color: #3b82f6;
 }
 
+.dropdown-menu-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .edit-mode-option.active {
     background-color: #e7f1ff;
     color: #0b5ed7;

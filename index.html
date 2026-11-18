@@ -62,24 +62,24 @@
                             <span class="d-none d-lg-inline">Arquivo</span>
                         </button>
                     <ul class="dropdown-menu">
-                        <li><button class="dropdown-item" id="newMapBtn">Novo mapa</button></li>
-                        <li><button class="dropdown-item" id="openMapBtn">Meus mapas</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center" id="newMapBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V7h3.5M9 12h6M12 9v6"/></svg>Novo mapa</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center" id="openMapBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6zm0 3h18"/></svg>Meus mapas</button></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><button class="dropdown-item" id="saveBtn">Salvar</button></li>
-                        <li><button class="dropdown-item" id="saveAsBtn">Salvar como...</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center" id="saveBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h14l2 2v16H4V3zm3 0v6h10V3M8 21v-7h8v7"/></svg>Salvar</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center" id="saveAsBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h14l2 2v16H4V3zm3 0v6h10V3M8 21v-7h8v7M17 10l3 3m0-3-3 3"/></svg>Salvar como...</button></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><button class="dropdown-item" id="importBtn">Importar</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center" id="importBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6zm0 3h18"/></svg>Abrir projeto <span class="text-muted ms-2">(.json)</span></button></li>
                         <li><hr class="dropdown-divider"></li>
                         <li class="dropend">
                             <button class="dropdown-item d-flex justify-content-between align-items-center" id="exportMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                                Exportar
+                                    <span class="d-flex align-items-center"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 17v3h16v-3"/></svg>Baixar</span>
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><button class="dropdown-item" id="exportPngBtn">PNG</button></li>
-                                <li><button class="dropdown-item" id="exportJpgBtn">JPG</button></li>
-                                <li><button class="dropdown-item" id="exportPdfBtn">PDF</button></li>
-                                <li><button class="dropdown-item" id="exportJsonBtn">JSON <span class="text-muted ms-2">Projeto</span></button></li>
+                                    <li><button class="dropdown-item d-flex align-items-center" id="exportPngBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m5 18 5-5 4 4 2-2 3 3"/></svg>Imagem <span class="text-muted ms-2">(.png)</span></button></li>
+                                    <li><button class="dropdown-item d-flex align-items-center" id="exportJpgBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="2"/><path d="m5 18 5-5 4 4 2-2 3 3"/></svg>Imagem <span class="text-muted ms-2">(.jpg)</span></button></li>
+                                    <li><button class="dropdown-item d-flex align-items-center" id="exportPdfBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6V2zm8 0v5h5M9 15h6M9 18h4"/></svg>Documento <span class="text-muted ms-2">(.pdf)</span></button></li>
+                                    <li><button class="dropdown-item d-flex align-items-center" id="exportJsonBtn"><svg class="dropdown-menu-icon me-2" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H6v5l-2 2 2 2v9h2M16 3h2v5l2 2-2 2v9h-2"/></svg>Projeto <span class="text-muted ms-2">(.json)</span></button></li>
                             </ul>
                         </li>
                     </ul>
