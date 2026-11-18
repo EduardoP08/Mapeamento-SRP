@@ -206,6 +206,21 @@ body {
     background-color: #3b82f6;
 }
 
+.edit-mode-option.active {
+    background-color: #e7f1ff;
+    color: #0b5ed7;
+    font-weight: 600;
+}
+
+.edit-mode-option .edit-mode-check {
+    visibility: hidden;
+    width: 0.75rem;
+}
+
+.edit-mode-option.active .edit-mode-check {
+    visibility: visible;
+}
+
 .delete-mode-message {
     position: fixed;
     top: 66px;

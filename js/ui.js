@@ -827,6 +827,7 @@ function renderSavedItem(item) {
                 state.selectedTables = createdTables;
                 state.selectedTable = null;
                 state.mode = 'multi';
+                updateActiveEditMode();
                 state.groupLocked = true;
                 updateFloatingLockIcon();
                 sidebar.classList.remove('show');
@@ -850,14 +851,23 @@ function renderSavedItem(item) {
     group.appendChild(row);
 }
 
+function showSavedGroupsEmptyTip() {
+    if (!savedGroups || savedGroups.childElementCount) return;
+    savedGroups.innerHTML = '<span class="saved-items-empty">Utilize a ferramenta de <b>seleção múltipla</b> <i>(editar > seleção múltipla)</i> para selecionar vários objetos e salvar como agrupamento.</span>';
+}
+
 async function loadSavedItems() {
     const groups = [...Object.values(savedItemGroups), savedGroups].filter(Boolean);
     groups.forEach(group => { group.innerHTML = ''; });
-    if (!state.currentUser) return;
+    if (!state.currentUser) {
+        showSavedGroupsEmptyTip();
+        return;
+    }
 
     try {
         const items = await loadItemsFromCloud();
         items.forEach(renderSavedItem);
+        showSavedGroupsEmptyTip();
     } catch (error) {
         groups.forEach(group => {
             group.innerHTML = '<span class="saved-items-empty">Não foi possível carregar.</span>';
@@ -1158,6 +1168,7 @@ if (canvas) {
         }
         if (state.selectedTables.length && !state.selectedTables.includes(clickedTable)) {
             state.mode = 'select';
+            updateActiveEditMode();
             state.selectedTables = [];
             state.selectedTable = null;
             state.groupLocked = false;
@@ -1367,8 +1378,26 @@ if (toggleDrawerBtn) toggleDrawerBtn.addEventListener('click', () => {
     drawer.classList.toggle('open');
 });
 
+function updateActiveEditMode() {
+    const activeModes = {
+        select: selectModeBtn,
+        multi: multiSelectModeBtn,
+        delete: deleteModeBtn
+    };
+
+    [selectModeBtn, multiSelectModeBtn, deleteModeBtn].forEach(button => {
+        if (!button) return;
+        const active = activeModes[state.mode] === button;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+updateActiveEditMode();
+
 if (selectModeBtn) selectModeBtn.addEventListener('click', () => {
     state.mode = 'select';
+    updateActiveEditMode();
     if (deleteModeMessage) {
         deleteModeMessage.classList.remove('show');
         deleteModeMessage.setAttribute('aria-hidden', 'true');
@@ -1383,6 +1412,7 @@ if (selectModeBtn) selectModeBtn.addEventListener('click', () => {
 
 if (multiSelectModeBtn) multiSelectModeBtn.addEventListener('click', () => {
     state.mode = 'multi';
+    updateActiveEditMode();
     if (deleteModeMessage) {
         deleteModeMessage.classList.remove('show');
         deleteModeMessage.setAttribute('aria-hidden', 'true');
@@ -1397,6 +1427,7 @@ if (multiSelectModeBtn) multiSelectModeBtn.addEventListener('click', () => {
 
 if (deleteModeBtn) deleteModeBtn.addEventListener('click', () => {
     state.mode = 'delete';
+    updateActiveEditMode();
     if (deleteModeMessage) {
         deleteModeMessage.classList.add('show');
         deleteModeMessage.setAttribute('aria-hidden', 'false');
@@ -2058,6 +2089,7 @@ document.addEventListener('mousedown', event => {
         state.selectedTable = null;
         state.groupLocked = false;
         state.mode = 'select';
+        updateActiveEditMode();
         if (canvas) canvas.style.cursor = 'crosshair';
     }
 });

@@ -97,9 +97,9 @@
                             <li><button class="dropdown-item" id="undoBtn"><i class="fas fa-undo me-2"></i>Desfazer <span class="text-muted ms-2">Ctrl+Z</span></button></li>
                             <li><button class="dropdown-item" id="redoBtn"><i class="fas fa-redo me-2"></i>Refazer <span class="text-muted ms-2">Ctrl+Y</span></button></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item" id="selectMode">Seleção</button></li>
-                            <li><button class="dropdown-item" id="multiSelectMode">Seleção múltipla <span class="text-muted ms-2">Shift + arrastar</span></button></li>
-                            <li><button class="dropdown-item" id="deleteMode">Excluir</button></li>
+                            <li><button class="dropdown-item edit-mode-option active" id="selectMode" aria-pressed="true"><i class="fas fa-check edit-mode-check me-2" aria-hidden="true"></i>Seleção</button></li>
+                            <li><button class="dropdown-item edit-mode-option" id="multiSelectMode" aria-pressed="false"><i class="fas fa-check edit-mode-check me-2" aria-hidden="true"></i>Seleção múltipla <span class="text-muted ms-2">Shift + arrastar</span></button></li>
+                            <li><button class="dropdown-item edit-mode-option" id="deleteMode" aria-pressed="false"><i class="fas fa-check edit-mode-check me-2" aria-hidden="true"></i>Excluir</button></li>
                         </ul>
                     </div>
                     
@@ -209,12 +209,16 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingGrouped">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGrouped" aria-expanded="false" aria-controls="collapseGrouped">
-                        Agrupados
+                        Agrupamentos
                         <i class="fa fa-chevron-down chevron-icon ms-auto" aria-hidden="true"></i>
                     </button>
                 </h2>
                 <div id="collapseGrouped" class="accordion-collapse collapse" aria-labelledby="headingGrouped">
-                    <div class="accordion-body p-2"><div id="savedGroups" class="saved-items-list"></div></div>
+                    <div class="accordion-body p-2">
+                        <div id="savedGroups" class="saved-items-list">
+                            <span class="saved-items-empty">Utilize a ferramenta de <b>seleção múltipla</b> <i>(editar > seleção múltipla)</i> para selecionar vários objetos e salvar como agrupamento.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
