@@ -1,6 +1,6 @@
-import './ui.js?v=20261118';
-import { initAuthObserver } from './auth.js?v=20261118';
-import { updateUIForUser } from './ui.js?v=20261118';
+import './ui.js';
+import { initAuthObserver } from './auth.js';
+import { updateUIForUser } from './ui.js';
 
 initAuthObserver(updateUIForUser);
 
