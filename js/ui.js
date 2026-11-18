@@ -120,6 +120,10 @@ function getSnappedDragPosition(x, y) {
     let snappedY = closestY <= SNAP_DISTANCE ? targetY.y : y;
     let xAlignment = closestX <= SNAP_DISTANCE ? targetX.x : null;
     let yAlignment = closestY <= SNAP_DISTANCE ? targetY.y : null;
+    let xAlignmentType = null;
+    let yAlignmentType = null;
+    if (xAlignment !== null) xAlignmentType = 'center';
+    if (yAlignment !== null) yAlignmentType = 'center';
     const movingBounds = getAlignmentHalfExtents(state.selectedTable);
     let closestEdgeX = Infinity;
     let closestEdgeY = Infinity;
@@ -160,35 +164,59 @@ function getSnappedDragPosition(x, y) {
     if (closestEdgeX <= SNAP_DISTANCE && closestEdgeX < closestX) {
         snappedX = snappedEdgeX;
         xAlignment = edgeLineX;
+        xAlignmentType = 'edge';
     }
     if (closestEdgeY <= SNAP_DISTANCE && closestEdgeY < closestY) {
         snappedY = snappedEdgeY;
         yAlignment = edgeLineY;
+        yAlignmentType = 'edge';
     }
     if (equalGapX && equalGapX.distance <= SNAP_DISTANCE && equalGapX.distance < Math.min(closestX, closestEdgeX)) {
         snappedX = equalGapX.coordinate;
         xAlignment = snappedX;
+        xAlignmentType = 'equal';
     }
     if (equalGapY && equalGapY.distance <= SNAP_DISTANCE && equalGapY.distance < Math.min(closestY, closestEdgeY)) {
         snappedY = equalGapY.coordinate;
         yAlignment = snappedY;
+        yAlignmentType = 'equal';
     }
 
     if (xAlignment !== null) {
-        snapLines.push({
-            x1: xAlignment,
-            y1: 0,
-            x2: xAlignment,
-            y2: canvas.height / (state.canvasScale || 1)
-        });
+        if (xAlignmentType === 'center') {
+            snapLines.push({
+                x1: xAlignment,
+                y1: snappedY,
+                x2: xAlignment,
+                y2: targetX.y
+            });
+        } else {
+            const guideLength = 300 / (state.canvasScale || 1);
+            snapLines.push({
+                x1: xAlignment,
+                y1: snappedY - guideLength,
+                x2: xAlignment,
+                y2: snappedY + guideLength
+            });
+        }
     }
     if (yAlignment !== null) {
-        snapLines.push({
-            x1: 0,
-            y1: yAlignment,
-            x2: canvas.width / (state.canvasScale || 1),
-            y2: yAlignment
-        });
+        if (yAlignmentType === 'center') {
+            snapLines.push({
+                x1: targetY.x,
+                y1: yAlignment,
+                x2: snappedX,
+                y2: yAlignment
+            });
+        } else {
+            const guideLength = 300 / (state.canvasScale || 1);
+            snapLines.push({
+                x1: snappedX - guideLength,
+                y1: yAlignment,
+                x2: snappedX + guideLength,
+                y2: yAlignment
+            });
+        }
     }
 
     const measurements = [
